@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件级成员管理 · 角色分组</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #eef2f6;
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 模拟页面背景 */
+        .page {
+            width: 1000px;
+            max-width: 100%;
+            background: white;
+            border-radius: 48px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .page-header h2 {
+            font-size: 2rem;
+            color: #0a253b;
+        }
+        .open-modal-btn {
+            background: #1f5090;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 16px -6px #1f5090cc;
+            border: 1px solid #154079;
+        }
+
+        /* ---------- 模态框样式 ---------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-container {
+            background: white;
+            width: 780px;
+            max-width: 95%;
+            border-radius: 48px;
+            box-shadow: 0 40px 70px -20px rgba(0,20,40,0.5);
+            padding: 32px 32px 36px;
+            transform: scale(0.95);
+            transition: 0.2s;
+        }
+        .modal-overlay.active .modal-container {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #0b2942;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-header h3 i {
+            color: #1f5090;
+            background: #eaf1fc;
+            padding: 12px;
+            border-radius: 20px;
+        }
+        .close-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #8fa3c0;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:hover {
+            background: #f0f4fc;
+            color: #1f5090;
+        }
+
+        /* 文件信息条 */
+        .file-info-bar {
+            background: #f3f8ff;
+            border-radius: 40px;
+            padding: 16px 22px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #dae3f0;
+        }
+        .file-icon {
+            font-size: 2rem;
+            color: #1f5090;
+        }
+        .file-details {
+            flex: 1;
+        }
+        .file-name {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #0b2942;
+        }
+        .file-meta {
+            font-size: 0.85rem;
+            color: #6f89aa;
+            margin-top: 4px;
+        }
+
+        /* 角色分组标签 */
+        .role-group-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2ecfc;
+            padding-bottom: 10px;
+        }
+        .role-group-tab {
+            background: transparent;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 40px;
+            font-weight: 500;
+            color: #4f688b;
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .role-group-tab.active {
+            background: #e9f0fa;
+            color: #1f5090;
+            font-weight: 600;
+        }
+        .role-group-tab i {
+            font-size: 1rem;
+        }
+
+        /* 成员列表容器 */
+        .member-list-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e2ecfc;
+            border-radius: 32px;
+            background: #f9fcff;
+            margin-bottom: 24px;
+        }
+        .member-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 22px;
+            border-bottom: 1px solid #eaf1fb;
+        }
+        .member-item:last-child {
+            border-bottom: none;
+        }
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 2;
+        }
+        .member-avatar {
+            width: 48px;
+            height: 48px;
+            background: #1f5090;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        .member-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .member-name {
+            font-weight: 600;
+            color: #1a2e4a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .member-dept {
+            font-size: 0.8rem;
+            color: #6f89aa;
+        }
+        .role-badge {
+            background: #e9effa;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1f5090;
+            display: inline-block;
+        }
+        .role-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .role-select {
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #b9ceec;
+            background: white;
+            font-size: 0.9rem;
+            color: #1e3a5f;
+            outline: none;
+            cursor: pointer;
+            min-width: 110px;
+        }
+        .role-select:disabled {
+            background: #f0f4fb;
+            color: #8fa3c0;
+            border-color: #d0dded;
+            cursor: not-allowed;
+        }
+        .lock-badge {
+            background: #f0f4fb;
+            padding: 6px 16px;
+            border-radius: 40px;
+            color: #4f688b;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .owner-badge {
+            background: #ffecba;
+            color: #9e6d0b;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 底部提示 */
+        .footnote {
+            background: #f0f7ff;
+            border-radius: 40px;
+            padding: 14px 22px;
+            color: #1f5090;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        /* 按钮组 */
+        .form-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+        }
+        .btn-primary {
+            background: #1f5090;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 40px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 16px -6px #1f5090cc;
+        }
+        .btn-secondary {
+            background: white;
+            border: 1px solid #c0d0e8;
+            color: #1a3455;
+            font-weight: 500;
+            padding: 15px 32px;
+            border-radius: 40px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            background: #123f6e;
+        }
+        .btn-secondary:hover {
+            background: #f5f9ff;
+            border-color: #8fa9cc;
+        }
+        .empty-group {
+            padding: 40px;
+            text-align: center;
+            color: #8fa3c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="page-header">
+            <h2>文件管理</h2>
+            <button class="open-modal-btn" id="openMemberModalBtn"><i class="fas fa-users-cog"></i> 文件成员管理</button>
+        </div>
+        <div style="background: #f9fcff; border-radius: 40px; padding: 40px; text-align: center; color: #8fa3c0;">
+            <i class="fas fa-file-alt fa-3x" style="opacity: 0.3;"></i>
+            <p style="margin-top: 20px;">点击按钮打开“文件级成员管理”模态框</p>
+        </div>
+    </div>
+
+    <!-- 文件级成员管理模态框 -->
+    <div class="modal-overlay" id="memberModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-users-cog"></i> 文件成员管理</h3>
+                <button class="close-btn" id="closeModalBtn"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- 文件信息 -->
+            <div class="file-info-bar">
+                <i class="fas fa-file-alt file-icon"></i>
+                <div class="file-details">
+                    <div class="file-name">2025产品路线图.pptx</div>
+                    <div class="file-meta">上传者：张明 · 4.2 MB · 最后更新：2025-03-14</div>
+                </div>
+            </div>
+
+            <!-- 角色分组标签 -->
+            <div class="role-group-tabs" id="roleGroupTabs">
+                <button class="role-group-tab active" data-role="all"><i class="fas fa-users"></i> 全部 (10)</button>
+                <button class="role-group-tab" data-role="admin"><i class="fas fa-shield-alt"></i> 管理员 (2)</button>
+                <button class="role-group-tab" data-role="editor"><i class="fas fa-pen"></i> 编辑者 (3)</button>
+                <button class="role-group-tab" data-role="reader"><i class="fas fa-eye"></i> 只读者 (4)</button>
+                <button class="role-group-tab" data-role="none"><i class="fas fa-ban"></i> 无权限 (1)</button>
+            </div>
+
+            <!-- 成员列表容器 -->
+            <div class="member-list-container" id="memberListContainer">
+                <!-- 动态渲染 -->
+            </div>
+
+            <!-- 提示信息 -->
+            <div class="footnote" id="footnote">
+                <i class="fas fa-info-circle"></i> 
+                <span>知识库所有者（所）和上传者（锁）固定为管理员，不可修改。其他成员可调整角色。</span>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelBtn"><i class="fas fa-times"></i> 取消</button>
+                <button class="btn-primary" id="saveBtn"><i class="fas fa-save"></i> 保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const modal = document.getElementById('memberModal');
+            const openBtn = document.getElementById('openMemberModalBtn');
+            const closeBtn = document.getElementById('closeModalBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const memberListContainer = document.getElementById('memberListContainer');
+            const roleGroupTabs = document.querySelectorAll('.role-group-tab');
+            const footnote = document.getElementById('footnote');
+
+            // 当前选中的角色分组
+            let currentRoleGroup = 'all';
+
+            // 模拟知识库成员数据
+            const members = [
+                { id: 1, name: '张明', account: 'zhangming', dept: '产品部', title: '产品总监', role: 'owner', fixed: 'owner', avatar: 'Z', note: '所' },
+                { id: 2, name: '李蔚', account: 'liwei', dept: '产品部', title: '产品经理', role: 'admin', fixed: null, avatar: 'L' },
+                { id: 3, name: '陈卓', account: 'chenzhuo', dept: '设计部', title: '交互设计主管', role: 'admin', fixed: null, avatar: 'C' },
+                { id: 4, name: '张琪', account: 'zhangqi', dept: '设计部', title: '视觉设计师', role: 'editor', fixed: null, avatar: 'Z' },
+                { id: 5, name: '何冰', account: 'hebing', dept: '研发部', title: '前端开发', role: 'editor', fixed: null, avatar: 'H' },
+                { id: 6, name: '赵一铭', account: 'zhaoym', dept: '研发部', title: '后端开发', role: 'editor', fixed: null, avatar: 'Z' },
+                { id: 7, name: '于海', account: 'yuhai', dept: '产品部', title: '产品运营', role: 'reader', fixed: null, avatar: 'Y' },
+                { id: 8, name: '孟晓', account: 'mengxiao', dept: '市场部', title: '市场助理', role: 'reader', fixed: null, avatar: 'M' },
+                { id: 9, name: '周婷', account: 'zhouting', dept: '设计部', title: 'UI实习生', role: 'reader', fixed: null, avatar: 'Z' },
+                { id: 10, name: '郑源', account: 'zhengyuan', dept: '研发部', title: '测试工程师', role: 'reader', fixed: null, avatar: 'Z' },
+                { id: 11, name: '王华', account: 'wanghua', dept: '市场部', title: '市场专员', role: 'none', fixed: null, avatar: 'W' } // 无权限
+            ];
+
+            // 上传者ID (文件所有者)
+            const uploaderId = 1; // 张明是上传者
+
+            // 知识库所有者ID (所)
+            const kbOwnerId = 1; // 假设张明同时也是知识库所有者
+
+            // 当前文件级权限设置 (模拟，用于保存)
+            let fileRoleSettings = {
+                overrides: {} // 记录被覆盖的角色 { userId: newRole }
+            };
+
+            // 初始化覆盖数据：默认无覆盖，所有成员角色与知识库一致
+            // 但为了演示，预设一些覆盖
+            fileRoleSettings.overrides = {
+                7: 'none', // 于海被设为无权限
+                8: 'editor' // 孟晓被提升为编辑者
+            };
+
+            // 获取成员在当前文件的实际角色
+            function getActualRole(member) {
+                // 固定角色优先：上传者 或 知识库所有者
+                if (member.id === uploaderId || member.id === kbOwnerId) {
+                    return 'admin'; // 固定为管理员
+                }
+                // 如果有覆盖，返回覆盖值
+                if (fileRoleSettings.overrides[member.id] !== undefined) {
+                    return fileRoleSettings.overrides[member.id];
+                }
+                // 否则返回知识库角色
+                return member.role;
+            }
+
+            // 判断成员是否可修改
+            function isEditable(member) {
+                // 上传者 或 知识库所有者 不可修改
+                if (member.id === uploaderId || member.id === kbOwnerId) {
+                    return false;
+                }
+                return true;
+            }
+
+            // 获取角色标签文本
+            function getRoleLabel(role) {
+                const labels = {
+                    'owner': '所有者',
+                    'admin': '管理员',
+                    'editor': '编辑者',
+                    'reader': '只读者',
+                    'none': '无权限'
+                };
+                return labels[role] || role;
+            }
+
+            // 更新分组tab计数
+            function updateTabCounts() {
+                const counts = {
+                    all: members.length,
+                    admin: 0,
+                    editor: 0,
+                    reader: 0,
+                    none: 0
+                };
+
+                members.forEach(m => {
+                    const actualRole = getActualRole(m);
+                    if (actualRole === 'admin' || actualRole === 'owner') counts.admin++;
+                    else if (actualRole === 'editor') counts.editor++;
+                    else if (actualRole === 'reader') counts.reader++;
+                    else if (actualRole === 'none') counts.none++;
+                });
+
+                roleGroupTabs.forEach(tab => {
+                    const role = tab.dataset.role;
+                    if (role !== 'all') {
+                        tab.innerHTML = `<i class="fas ${getIconForRole(role)}"></i> ${getRoleLabel(role)} (${counts[role]})`;
+                    } else {
+                        tab.innerHTML = `<i class="fas fa-users"></i> 全部 (${counts.all})`;
+                    }
+                });
+            }
+
+            function getIconForRole(role) {
+                const icons = {
+                    admin: 'fa-shield-alt',
+                    editor: 'fa-pen',
+                    reader: 'fa-eye',
+                    none: 'fa-ban'
+                };
+                return icons[role] || 'fa-user';
+            }
+
+            // 渲染成员列表
+            function renderMemberList() {
+                let filteredMembers = members;
+
+                if (currentRoleGroup !== 'all') {
+                    filteredMembers = members.filter(m => {
+                        const actualRole = getActualRole(m);
+                        if (currentRoleGroup === 'admin') {
+                            return actualRole === 'admin' || actualRole === 'owner';
+                        }
+                        return actualRole === currentRoleGroup;
+                    });
+                }
+
+                let html = '';
+                filteredMembers.forEach(m => {
+                    const actualRole = getActualRole(m);
+                    const editable = isEditable(m);
+                    
+                    // 确定徽章
+                    let badgeHtml = '';
+                    if (m.id === uploaderId) {
+                        badgeHtml = `<span class="lock-badge"><i class="fas fa-lock"></i> 上传者</span>`;
+                    } else if (m.id === kbOwnerId) {
+                        badgeHtml = `<span class="owner-badge"><i class="fas fa-crown"></i> 所</span>`;
+                    }
+
+                    // 角色下拉选项 (管理员、编辑者、只读者、无权限)
+                    const roleOptions = [
+                        { value: 'admin', label: '管理员' },
+                        { value: 'editor', label: '编辑者' },
+                        { value: 'reader', label: '只读者' },
+                        { value: 'none', label: '无权限' }
+                    ];
+
+                    let selectHtml = '';
+                    if (editable) {
+                        selectHtml = `
+                            <select class="role-select" data-id="${m.id}" ${!editable ? 'disabled' : ''}>
+                                ${roleOptions.map(r => `<option value="${r.value}" ${actualRole === r.value ? 'selected' : ''}>${r.label}</option>`).join('')}
+                            </select>
+                        `;
+                    } else {
+                        selectHtml = `<span class="lock-badge"><i class="fas fa-lock"></i> 管理员</span>`;
+                    }
+
+                    html += `
+                        <div class="member-item">
+                            <div class="member-info">
+                                <div class="member-avatar">${m.avatar}</div>
+                                <div class="member-details">
+                                    <div class="member-name">
+                                        ${m.name}
+                                        ${badgeHtml}
+                                    </div>
+                                    <div class="member-dept">${m.dept} · ${m.title}</div>
+                                </div>
+                            </div>
+                            <div class="role-control">
+                                <span class="role-badge">知识库: ${getRoleLabel(m.role)}</span>
+                                ${selectHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                if (filteredMembers.length === 0) {
+                    html = `<div class="empty-group"><i class="fas fa-users-slash fa-2x"></i><p>该分组下暂无成员</p></div>`;
+                }
+
+                memberListContainer.innerHTML = html;
+
+                // 绑定下拉事件
+                document.querySelectorAll('.role-select').forEach(select => {
+                    select.addEventListener('change', (e) => {
+                        const userId = parseInt(e.target.dataset.id);
+                        const newRole = e.target.value;
+                        fileRoleSettings.overrides[userId] = newRole;
+                        // 更新计数和列表
+                        updateTabCounts();
+                        renderMemberList(); // 重新渲染以反映变化
+                    });
+                });
+
+                updateTabCounts();
+            }
+
+            // 打开模态框
+            openBtn.addEventListener('click', () => {
+                modal.classList.add('active');
+                currentRoleGroup = 'all';
+                // 激活全部tab
+                roleGroupTabs.forEach(t => {
+                    t.classList.remove('active');
+                    if (t.dataset.role === 'all') t.classList.add('active');
+                });
+                renderMemberList();
+            });
+
+            // 关闭模态框
+            const closeModal = () => {
+                modal.classList.remove('active');
+            };
+            closeBtn.addEventListener('click', closeModal);
+            cancelBtn.addEventListener('click', closeModal);
+
+            // 点击遮罩关闭
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+
+            // 角色分组切换
+            roleGroupTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    roleGroupTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentRoleGroup = tab.dataset.role;
+                    renderMemberList();
+                });
+            });
+
+            // 保存设置
+            saveBtn.addEventListener('click', () => {
+                const changes = Object.entries(fileRoleSettings.overrides)
+                    .map(([id, role]) => {
+                        const member = members.find(m => m.id === parseInt(id));
+                        return member ? `${member.name} → ${getRoleLabel(role)}` : '';
+                    })
+                    .filter(Boolean);
+                
+                alert(`✅ 文件成员权限已保存\n${changes.length > 0 ? '变更：' + changes.join('；') : '无角色变更'}`);
+                closeModal();
+            });
+        })();
+    </script>
+</body>
+</html>

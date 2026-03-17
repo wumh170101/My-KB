@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件知识问答</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #e9f0f7;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .knowledge-base {
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        /* 顶部导航 */
+        .top-nav {
+            padding: 18px 28px;
+            background: #ffffffcc;
+            border-bottom: 1px solid #e0eaf5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(4px);
+        }
+        .nav-left h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #0b2942;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-left h1 i {
+            color: #1f5090;
+            background: #e1ebf9;
+            padding: 10px;
+            border-radius: 20px;
+        }
+        .nav-right {
+            display: flex;
+            gap: 20px;
+            color: #3f5f83;
+        }
+        .nav-right span {
+            background: #ecf3fc;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 左侧目录树 */
+        .dir-tree {
+            width: 320px;
+            background: #f8fbfe;
+            border-right: 1px solid #dbe4f0;
+            padding: 20px 16px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .tree-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-right: 8px;
+        }
+        .tree-header h3 {
+            font-size: 1.2rem;
+            color: #1a3455;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tree-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .tree-actions button {
+            background: white;
+            border: 1px solid #cdddec;
+            border-radius: 30px;
+            width: 34px;
+            height: 34px;
+            color: #1f5090;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tree-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .tree-node {
+            list-style: none;
+            margin: 2px 0;
+        }
+        .node-content {
+            display: flex;
+            align-items: center;
+            padding: 8px 8px 8px 0;
+            border-radius: 30px;
+            cursor: pointer;
+            color: #2f405c;
+            font-size: 0.95rem;
+        }
+        .node-content:hover {
+            background: #e3ecf9;
+        }
+        .node-content i:first-child {
+            width: 28px;
+            color: #6f8db0;
+        }
+        .node-content .name {
+            flex: 1;
+            margin-left: 4px;
+            font-weight: 500;
+        }
+        .dir-ops {
+            display: flex;
+            gap: 6px;
+            margin-right: 4px;
+            opacity: 0.3;
+        }
+        .node-content:hover .dir-ops {
+            opacity: 1;
+        }
+        .dir-ops button {
+            background: transparent;
+            border: none;
+            color: #4f6f97;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 20px;
+        }
+        .dir-ops button:hover {
+            background: white;
+            color: #1f5090;
+        }
+        .children {
+            padding-left: 24px;
+        }
+
+        /* 右侧面板 */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: white;
+        }
+
+        /* 知识问答页面 */
+        .qa-container {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.5rem;
+            color: #0b2942;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .close-btn {
+            background: #f0f4f8;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5c7083;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        
+        .close-btn:hover {
+            background: #e1e7ee;
+            color: #0b2942;
+        }
+        
+        /* 文件信息 */
+        .file-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: #f9fcff;
+            padding: 16px 20px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            border: 1px solid #e2ecfc;
+        }
+        
+        .file-icon {
+            font-size: 2rem;
+            color: #1f5090;
+        }
+        
+        .file-details {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #0b2942;
+            margin-bottom: 4px;
+        }
+        
+        .file-meta {
+            font-size: 0.85rem;
+            color: #6f89aa;
+        }
+        
+        /* 知识库信息 */
+        .kb-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f0f8f2;
+            padding: 12px 16px;
+            border-radius: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #d1e8d8;
+        }
+        
+        .kb-icon {
+            background: #d1e8d8;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a7346;
+        }
+        
+        .kb-details {
+            flex: 1;
+        }
+        
+        .kb-name {
+            font-weight: 500;
+            color: #0b2942;
+            margin-bottom: 2px;
+        }
+        
+        .kb-meta {
+            font-size: 0.8rem;
+            color: #6f89aa;
+        }
+        
+        /* 搜索区 */
+        .search-area {
+            margin-bottom: 24px;
+        }
+        
+        .question-input {
+            width: 100%;
+            min-height: 120px;
+            padding: 16px 20px;
+            border: 2px solid #e2ecfc;
+            border-radius: 24px;
+            resize: vertical;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #0b2942;
+            transition: 0.2s;
+        }
+        
+        .question-input:focus {
+            outline: none;
+            border-color: #1f5090;
+            box-shadow: 0 0 0 3px rgba(31, 80, 144, 0.1);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            justify-content: flex-end;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #1f5090 0%, #0b2942 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(31, 80, 144, 0.3);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* 加载动画 */
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 答案区 */
+        .answer-section {
+            background: #f9fcff;
+            border-radius: 24px;
+            padding: 20px;
+            border: 1px solid #e2ecfc;
+        }
+        
+        .answer-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .answer-header h4 {
+            color: #0b2942;
+            font-size: 1.1rem;
+        }
+        
+        .answer-header i {
+            color: #f59e0b;
+            font-size: 1.2rem;
+        }
+        
+        .permission-tag {
+            background: #f0f4f8;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #5c7083;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        
+        .answer-content {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 20px;
+            border: 1px solid #e2ecfc;
+            line-height: 1.6;
+            color: #0b2942;
+            margin-bottom: 20px;
+        }
+        
+        /* 召回片段 */
+        .fragments-section {
+            border-top: 1px solid #e2ecfc;
+            padding-top: 16px;
+        }
+        
+        .fragments-title {
+            font-weight: 600;
+            color: #0b2942;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .fragment-item {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid #e2ecfc;
+            margin-bottom: 8px;
+        }
+        
+        .fragment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .fragment-source {
+            color: #6f89aa;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .fragment-score {
+            color: #1f5090;
+            font-weight: 500;
+        }
+        
+        .fragment-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #0b2942;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+<div class="knowledge-base">
+    <div class="top-nav">
+        <div class="nav-left">
+            <h1><i class="fas fa-database"></i> 产品研发知识库</h1>
+        </div>
+        <div class="nav-right">
+            <span><i class="fas fa-sitemap"></i> 公司级 · 产研部</span>
+            <span><i class="fas fa-user-circle"></i> 知识库角色: 管理员</span>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <!-- 左侧目录 -->
+        <div class="dir-tree">
+            <div class="tree-header">
+                <h3><i class="fas fa-folder-tree"></i> 目录</h3>
+                <div class="tree-actions">
+                    <button id="addRootDirBtn" title="新增根目录"><i class="fas fa-plus"></i></button>
+                    <button id="expandAllBtn" title="展开全部"><i class="fas fa-chevron-circle-down"></i></button>
+                    <button id="collapseAllBtn" title="折叠全部"><i class="fas fa-chevron-circle-right"></i></button>
+                </div>
+            </div>
+            <div class="tree-list" id="treeContainer"></div>
+        </div>
+
+        <!-- 右侧 -->
+        <div class="right-panel">
+            <div class="qa-container">
+        <div class="modal-header">
+            <h3><i class="fas fa-robot"></i> 文件知识问答</h3>
+        </div>
+
+        <!-- 文件信息 -->
+        <div class="file-info-bar">
+            <i class="fas fa-file-pdf file-icon"></i>
+            <div class="file-details">
+                <div class="file-name">2025年差旅费管理办法.pdf</div>
+                <div class="file-meta">财务部 · 2.8 MB · 2024-12-20</div>
+            </div>
+        </div>
+
+        <!-- 知识库信息 -->
+        <div class="kb-info">
+            <div class="kb-icon"><i class="fas fa-calculator"></i></div>
+            <div class="kb-details">
+                <div class="kb-name">财务知识库</div>
+                <div class="kb-meta">公司级 · 财务部 · 156个文件</div>
+            </div>
+        </div>
+
+        <!-- 搜索区 -->
+        <div class="search-area">
+            <textarea class="question-input" id="questionInput" placeholder="请输入您的问题...例如：北京地区住宿费标准是多少">北京地区住宿费标准是多少</textarea>
+            <div class="action-buttons">
+                <button class="generate-btn" id="generateBtn">
+                    <i class="fas fa-magic"></i> 大模型生成
+                </button>
+            </div>
+        </div>
+
+        <!-- 答案区 (初始隐藏) -->
+        <div class="answer-section" id="answerSection" style="display: none;">
+            <div class="answer-header">
+                <i class="fas fa-lightbulb"></i>
+                <h4>生成答案</h4>
+            </div>
+            
+            <!-- 我的权限 -->
+            <div class="permission-tag">
+                <i class="fas fa-user-tag"></i> 我的权限：管理员
+            </div>
+            
+            <!-- 答案内容 -->
+            <div class="answer-content" id="answerContent">
+                根据《北京地区差旅费报销细则》，北京地区住宿费标准为：一般员工500元/天，经理级650元/天，总监级800元/天。7-9月旺季期间标准上浮20%。
+            </div>
+
+            <!-- 召回片段（带高亮） -->
+            <div class="fragments-section">
+                <div class="fragments-title"><i class="fas fa-file-alt"></i> 召回片段</div>
+                <div id="fragmentsList">
+                    <!-- 动态渲染 -->
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        (function() {
+            // 目录树数据
+            let treeData = [
+                { id: 'd1', name: '产品需求', expanded: true, children: [
+                    { id: 'd1-1', name: 'PRD文档', expanded: false, children: [] },
+                    { id: 'd1-2', name: '用户反馈', expanded: false, children: [] }
+                ]},
+                { id: 'd2', name: '设计稿', expanded: true, children: [
+                    { id: 'd2-1', name: 'UI源文件', expanded: true, children: [
+                        { id: 'd2-1-1', name: '组件库', children: [] }
+                    ]},
+                    { id: 'd2-2', name: '交互原型', children: [] }
+                ]},
+                { id: 'd3', name: '研发文档', expanded: false, children: [
+                    { id: 'd3-1', name: '架构设计', children: [] },
+                    { id: 'd3-2', name: 'API规范', children: [] }
+                ]},
+                { id: 'd4', name: '测试报告', expanded: false, children: [] }
+            ];
+
+            function renderTree(nodes, parentElement) {
+                nodes.forEach(node => {
+                    const li = document.createElement('li');
+                    li.className = 'tree-node';
+                    li.dataset.id = node.id;
+
+                    const div = document.createElement('div');
+                    div.className = 'node-content';
+                    div.innerHTML = `
+                        <i class="fas ${node.children && node.children.length ? (node.expanded ? 'fa-folder-open' : 'fa-folder') : 'fa-file'}"></i>
+                        <span class="name">${node.name}</span>
+                        <span class="dir-ops">
+                            <button class="dir-add" title="新增子目录"><i class="fas fa-plus"></i></button>
+                            <button class="dir-edit" title="重命名"><i class="fas fa-edit"></i></button>
+                            <button class="dir-delete" title="删除"><i class="fas fa-trash"></i></button>
+                        </span>
+                    `;
+                    li.appendChild(div);
+
+                    div.querySelector('.dir-add').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        alert(`新增子目录到 “${node.name}” (演示)`);
+                    });
+                    div.querySelector('.dir-edit').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        alert(`重命名目录 “${node.name}” (演示)`);
+                    });
+                    div.querySelector('.dir-delete').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (confirm(`确定删除目录 “${node.name}” ？(演示)`)) alert('已删除');
+                    });
+
+                    if (node.children && node.children.length) {
+                        const childUl = document.createElement('ul');
+                        childUl.className = 'children';
+                        childUl.style.display = node.expanded ? 'block' : 'none';
+                        renderTree(node.children, childUl);
+                        li.appendChild(childUl);
+
+                        div.addEventListener('click', (e) => {
+                            if (e.target.closest('.dir-ops')) return;
+                            node.expanded = !node.expanded;
+                            childUl.style.display = node.expanded ? 'block' : 'none';
+                            const icon = div.querySelector('i:first-child');
+                            if (icon) icon.className = `fas ${node.expanded ? 'fa-folder-open' : 'fa-folder'}`;
+                        });
+                    }
+                    parentElement.appendChild(li);
+                });
+            }
+
+            const treeContainer = document.getElementById('treeContainer');
+            const treeUl = document.createElement('ul');
+            treeUl.style.listStyle = 'none';
+            treeUl.style.paddingLeft = '4px';
+            renderTree(treeData, treeUl);
+            treeContainer.appendChild(treeUl);
+
+            document.getElementById('addRootDirBtn').addEventListener('click', () => alert('新增根目录 (演示)'));
+            document.getElementById('expandAllBtn').addEventListener('click', () => {
+                document.querySelectorAll('.children').forEach(ul => ul.style.display = 'block');
+                document.querySelectorAll('.node-content i:first-child').forEach(icon => {
+                    if (icon.classList.contains('fa-folder')) icon.className = 'fas fa-folder-open';
+                });
+            });
+            document.getElementById('collapseAllBtn').addEventListener('click', () => {
+                document.querySelectorAll('.children').forEach(ul => ul.style.display = 'none');
+                document.querySelectorAll('.node-content i:first-child').forEach(icon => {
+                    if (icon.classList.contains('fa-folder-open')) icon.className = 'fas fa-folder';
+                });
+            });
+
+            // 大模型生成按钮点击
+            const generateBtn = document.getElementById('generateBtn');
+            const questionInput = document.getElementById('questionInput');
+            const answerSection = document.getElementById('answerSection');
+            const answerContent = document.getElementById('answerContent');
+            const fragmentsList = document.getElementById('fragmentsList');
+            
+            generateBtn.addEventListener('click', () => {
+                const question = questionInput.value.trim();
+                if (!question) {
+                    alert('请输入问题');
+                    return;
+                }
+                
+                // 模拟加载状态
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
+                
+                // 模拟API调用延迟
+                setTimeout(() => {
+                    // 根据问题和文件生成不同的答案（演示用）
+                    let answer = '';
+                    let fragments = [];
+                    
+                    if (question.includes('住宿') || question.includes('酒店')) {
+                        answer = '根据《北京地区差旅费报销细则》，北京地区住宿费标准为：一般员工500元/天，经理级650元/天，总监级800元/天。7-9月旺季期间标准上浮20%。';
+                        fragments = [
+                            {
+                                source: '北京地区差旅费报销细则.docx',
+                                score: '0.98',
+                                text: '"3.1 北京地区住宿费标准：一般员工<span class=\"highlight\">500元/天</span>，经理级<span class=\"highlight\">650元/天</span>，总监级<span class=\"highlight\">800元/天</span>。每年7-9月为旺季，标准上浮20%。"'
+                            },
+                            {
+                                source: '2025年差旅费管理办法.pdf',
+                                score: '0.92',
+                                text: '"第二十一条 北京地区住宿费标准为：一般员工500元/天，经理级650元/天，总监级800元/天。"'
+                            }
+                        ];
+                    } else if (question.includes('餐补') || question.includes('伙食')) {
+                        answer = '差旅伙食补助标准为每人每天100元，按自然天数计算，不再另外报销餐饮发票。';
+                        fragments = [
+                            {
+                                source: '2025年差旅费管理办法.pdf',
+                                score: '0.97',
+                                text: '"第二十三条 伙食补助费按自然天数计算，每人每天<span class=\"highlight\">100元</span>，不再另外报销餐饮发票。"'
+                            }
+                        ];
+                    } else if (question.includes('交通') || question.includes('车费')) {
+                        answer = '市内交通补助为每人每天80元包干，不再报销出租车票。往返机场/火车站可凭票据实报实销。';
+                        fragments = [
+                            {
+                                source: '北京地区差旅费报销细则.docx',
+                                score: '0.96',
+                                text: '"3.5 交通补助：市内交通按每人每天<span class=\"highlight\">80元</span>包干，不再报销出租车票。往返机场/火车站可凭票据实报实销。"'
+                            }
+                        ];
+                    } else {
+                        answer = '抱歉，未能找到与您问题相关的信息。请尝试换个问法。';
+                        fragments = [];
+                    }
+                    
+                    // 更新答案区
+                    answerContent.innerText = answer;
+                    
+                    // 渲染召回片段
+                    if (fragments.length > 0) {
+                        let fragmentsHtml = '';
+                        fragments.forEach(f => {
+                            fragmentsHtml += `
+                                <div class="fragment-item">
+                                    <div class="fragment-header">
+                                        <span class="fragment-source"><i class="fas fa-file"></i> ${f.source}</span>
+                                        <span class="fragment-score">相似度 ${f.score}</span>
+                                    </div>
+                                    <div class="fragment-text">${f.text}</div>
+                                </div>
+                            `;
+                        });
+                        fragmentsList.innerHTML = fragmentsHtml;
+                    } else {
+                        fragmentsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #8fa3c0;">暂无召回片段</div>';
+                    }
+                    
+                    // 显示答案区
+                    answerSection.style.display = 'block';
+                    
+                    // 恢复按钮状态
+                    generateBtn.disabled = false;
+                    generateBtn.innerHTML = '<i class="fas fa-magic"></i> 大模型生成';
+                    
+                }, 1500);
+            });
+        })();
+    </script>
+</body>
+</html>
