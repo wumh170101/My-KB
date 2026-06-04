@@ -556,11 +556,7 @@
             nodes.forEach(n => sortChildren(n.children));
         };
         sortChildren(roots);
-        roots.sort((a, b) => {
-            if (a.name === "公司级知识库" && b.name === "个人知识库") return -1;
-            if (a.name === "个人知识库" && b.name === "公司级知识库") return 1;
-            return a.name.localeCompare(b.name);
-        });
+        roots.sort((a, b) => a.name.localeCompare(b.name));
         return roots;
     }
 
