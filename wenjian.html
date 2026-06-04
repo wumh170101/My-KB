@@ -178,16 +178,6 @@
             font-weight: 500;
         }
 
-        .upload-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 20px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
         .file-table-container {
             background: white;
             border-radius: 16px;
@@ -493,8 +483,7 @@
     </div>
 </div>
 
-<!-- 隐藏的文件上传 input -->
-<input type="file" id="fileUploadInput" style="display:none" multiple>
+
 
 <script>
     // ---------- 目录数据 ----------
@@ -713,40 +702,6 @@
         return map[perm] || 'perm-internal';
     }
 
-    // 上传文件功能
-    function uploadFiles(files) {
-        if (!files || files.length === 0) return;
-        const targetDirId = currentSelectedDirId;
-        const now = new Date();
-        const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-        let addedCount = 0;
-        for (let file of files) {
-            const newId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-            let fileSize = file.size ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : '未知';
-            const previewContent = `文件名称：${file.name}\n上传时间：${dateStr}\n文件大小：${fileSize}\n（此为模拟内容，实际应解析文件正文）`;
-            const newFile = {
-                id: newId,
-                name: file.name,
-                directoryId: targetDirId,
-                sourceSystem: "本地上传",
-                tags: [],
-                parsingStatus: "pending",
-                creator: "当前用户",
-                updateTime: dateStr,
-                fileSize: fileSize,
-                version: "1.0",
-                content: previewContent,
-                qaPairs: []
-            };
-            filesData.push(newFile);
-            addedCount++;
-        }
-        if (addedCount > 0) {
-            showToast(`成功上传 ${addedCount} 个文件到当前目录`);
-            renderFileList();
-        }
-    }
-
     // 删除文件功能
     function deleteFile(fileId, fileName) {
         if (confirm(`确定要删除文件“${fileName}”吗？此操作不可恢复。`)) {
@@ -793,7 +748,6 @@
                         <option value="">全部</option>
                         <option value="CRM" ${currentFilter.sourceSystem === 'CRM' ? 'selected' : ''}>CRM</option>
                         <option value="AnyShare" ${currentFilter.sourceSystem === 'AnyShare' ? 'selected' : ''}>AnyShare</option>
-                        <option value="本地上传" ${currentFilter.sourceSystem === '本地上传' ? 'selected' : ''}>本地上传</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -812,7 +766,6 @@
                     </label>
                 </div>
                 <button class="search-btn" id="searchBtn">搜索</button>
-                <button class="upload-btn" id="uploadBtn">上传文件</button>
             </div>
             <div class="file-table-container">
                 <table class="file-table">
@@ -861,19 +814,6 @@
         const includeCheckbox = document.getElementById('includeSubdirsCheckbox');
         if (includeCheckbox) {
             includeCheckbox.addEventListener('change', () => renderFileList());
-        }
-        const uploadBtn = document.getElementById('uploadBtn');
-        if (uploadBtn) {
-            uploadBtn.addEventListener('click', () => {
-                const fileInput = document.getElementById('fileUploadInput');
-                fileInput.value = '';
-                fileInput.click();
-            });
-        }
-        const fileInput = document.getElementById('fileUploadInput');
-        if (fileInput) {
-            fileInput.removeEventListener('change', handleFileSelect);
-            fileInput.addEventListener('change', handleFileSelect);
         }
         document.querySelectorAll('.view-detail').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -966,14 +906,6 @@
     document.getElementById('permissionModal')?.addEventListener('click', (e) => {
         if (e.target === document.getElementById('permissionModal')) closeModal('permissionModal');
     });
-
-    function handleFileSelect(e) {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            uploadFiles(files);
-        }
-        e.target.value = '';
-    }
 
     // 详情：左右结构，左侧文档内容，右侧三个Tab（元数据、标签、QA对）
     function showDetail(fileId) {
