@@ -450,19 +450,14 @@
             }
         });
         
-        // 知识库管理菜单
-        document.getElementById('menuKnowledgeBase').addEventListener('click', function() {
-            window.location.href = '4知识库内部.html';
-        });
-        document.getElementById('menuCreateKB').addEventListener('click', function() {
-            window.location.href = '2创建知识库.html';
-        });
         // 目录管理打开 mulu.html
-        document.getElementById('menuKnowledgeBase').addEventListener('click', function() {
+        document.getElementById('menuKnowledgeBase').addEventListener('click', function(e) {
+            e.stopPropagation();
             window.location.href = 'mulu.html';
         });
         // 文件管理打开 wenjian.html
-        document.getElementById('menuFileDetail').addEventListener('click', function() {
+        document.getElementById('menuFileDetail').addEventListener('click', function(e) {
+            e.stopPropagation();
             window.location.href = 'wenjian.html';
         });
 

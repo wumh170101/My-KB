@@ -250,6 +250,29 @@
             color: #b91c1c;
         }
 
+        .perm-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .perm-public {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .perm-internal {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .perm-private {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
         .action-btn {
             background: none;
             border: none;
@@ -415,6 +438,50 @@
 </div>
 <div id="toastMsg" class="toast">提示</div>
 
+<!-- 权限管理模态框 -->
+<div id="permissionModal" class="modal">
+    <div class="modal-content" style="width:450px;">
+        <div class="modal-header">
+            <span>权限管理</span>
+            <span class="close-modal" id="closePermissionModal">&times;</span>
+        </div>
+        <div style="padding:20px;">
+            <div class="form-group">
+                <label>文件名称</label>
+                <div id="permFileName" style="padding:8px;background:#f9fafb;border-radius:8px;"></div>
+            </div>
+            <div class="form-group">
+                <label>访问权限</label>
+                <div style="display:flex;gap:12px;margin-top:8px;">
+                    <label style="flex:1;">
+                        <input type="radio" name="permission" value="public">
+                        <span style="margin-left:6px;">公开</span>
+                    </label>
+                    <label style="flex:1;">
+                        <input type="radio" name="permission" value="internal">
+                        <span style="margin-left:6px;">内部</span>
+                    </label>
+                    <label style="flex:1;">
+                        <input type="radio" name="permission" value="private">
+                        <span style="margin-left:6px;">私有</span>
+                    </label>
+                </div>
+                <div id="permissionHint" style="margin-top:12px;padding:10px;background:#dbeafe;border-radius:8px;color:#1e40af;font-size:13px;">
+                    公开 - 所有用户可见
+                </div>
+            </div>
+            <div class="form-group">
+                <label style="display:block;margin-bottom:8px;">授权用户</label>
+                <div id="permUsersList" style="background:#f9fafb;border-radius:8px;padding:12px;min-height:80px;"></div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;">
+                <button id="cancelPermBtn" style="padding:8px 20px;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;">取消</button>
+                <button id="savePermBtn" style="padding:8px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;">保存权限</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- 详情模态框 -->
 <div id="detailModal" class="modal">
     <div class="modal-content">
@@ -448,7 +515,7 @@
         { 
             id: "file1", name: "2026年财富管理策略报告.pdf", directoryId: "dir_wealth", sourceSystem: "CRM", 
             tags: ["策略", "年度报告"], parsingStatus: "completed", creator: "张明", updateTime: "2026-02-10", 
-            fileSize: "2.3 MB", version: "v1.0",
+            fileSize: "2.3 MB", version: "v1.0", permission: "internal",
             content: "2026年财富管理策略报告核心观点：\n1. 宏观经济展望温和复苏；\n2. 权益类资产配置比例建议提升至40%；\n3. 债券市场谨慎乐观；\n4. 另类投资关注私募股权。",
             qaPairs: [
                 { question: "2026年权益类资产配置建议是多少？", answer: "建议提升至40%。" },
@@ -458,7 +525,7 @@
         { 
             id: "file2", name: "私募产品尽调模板.docx", directoryId: "dir_wealth", sourceSystem: "AnyShare", 
             tags: ["尽调", "模板"], parsingStatus: "processing", creator: "李芳", updateTime: "2026-03-01",
-            fileSize: "0.8 MB", version: "v2.1",
+            fileSize: "0.8 MB", version: "v2.1", permission: "private",
             content: "本模板包括：\n一、管理人基本情况\n二、投资策略与风控\n三、历史业绩归因\n四、费率结构分析。",
             qaPairs: [
                 { question: "尽调模板包含哪些部分？", answer: "包含管理人基本情况、投资策略与风控、历史业绩归因、费率结构分析。" }
@@ -467,7 +534,7 @@
         { 
             id: "file3", name: "新发基金营销话术.pdf", directoryId: "dir_product", sourceSystem: "CRM", 
             tags: ["营销", "话术"], parsingStatus: "completed", creator: "王丽", updateTime: "2026-02-28",
-            fileSize: "1.1 MB", version: "v3.0",
+            fileSize: "1.1 MB", version: "v3.0", permission: "internal",
             content: "话术要点：\n- 强调基金经理历史业绩\n- 突出产品风险控制优势\n- 常见客户异议解答",
             qaPairs: [
                 { question: "基金营销话术的核心要点是什么？", answer: "强调基金经理历史业绩、突出风险控制优势、解答常见异议。" }
@@ -476,14 +543,14 @@
         { 
             id: "file4", name: "竞品对比分析-XX产品.pptx", directoryId: "dir_product", sourceSystem: "AnyShare", 
             tags: ["竞品"], parsingStatus: "failed", creator: "赵岩", updateTime: "2026-01-15",
-            fileSize: "4.2 MB", version: "v0.9",
+            fileSize: "4.2 MB", version: "v0.9", permission: "private",
             content: "竞品A费率结构、竞品B历史收益、我司优势总结。",
             qaPairs: []
         },
         { 
             id: "file5", name: "证券期货投资者适当性管理办法.pdf", directoryId: "dir_regulation", sourceSystem: "AnyShare", 
             tags: ["法规", "适当性"], parsingStatus: "completed", creator: "合规部", updateTime: "2026-02-20",
-            fileSize: "1.5 MB", version: "官方版",
+            fileSize: "1.5 MB", version: "官方版", permission: "public",
             content: "本办法旨在规范证券期货投资者适当性管理，保护投资者合法权益。",
             qaPairs: [
                 { question: "投资者适当性管理办法的目的是什么？", answer: "规范适当性管理，保护投资者合法权益。" }
@@ -492,7 +559,7 @@
         { 
             id: "file6", name: "2026年反洗钱新规解读.docx", directoryId: "dir_regulation", sourceSystem: "CRM", 
             tags: ["反洗钱", "解读"], parsingStatus: "pending", creator: "风控中心", updateTime: "2026-03-05",
-            fileSize: "0.6 MB", version: "初稿",
+            fileSize: "0.6 MB", version: "初稿", permission: "internal",
             content: "新规强化客户身份识别，提高大额交易报告标准。",
             qaPairs: [
                 { question: "反洗钱新规主要强化了什么？", answer: "强化客户身份识别，提高大额交易报告标准。" }
@@ -501,7 +568,7 @@
         { 
             id: "file7", name: "客户经理工作手册.pdf", directoryId: "dir_job", sourceSystem: "AnyShare", 
             tags: ["岗位", "SOP"], parsingStatus: "completed", creator: "培训部", updateTime: "2025-12-10",
-            fileSize: "3.0 MB", version: "2025版",
+            fileSize: "3.0 MB", version: "2025版", permission: "public",
             content: "每日工作流程：晨会、客户拜访、日志填写；合规红线：不得承诺收益。",
             qaPairs: [
                 { question: "客户经理每日工作流程包括哪些？", answer: "晨会、客户拜访、日志填写。" },
@@ -511,7 +578,7 @@
         { 
             id: "file8", name: "产品培训课件.pptx", directoryId: "dir_job", sourceSystem: "CRM", 
             tags: ["培训"], parsingStatus: "completed", creator: "市场部", updateTime: "2026-01-20",
-            fileSize: "5.1 MB", version: "Q1更新",
+            fileSize: "5.1 MB", version: "Q1更新", permission: "internal",
             content: "课件第一部分：产品定位；第二部分：销售技巧。",
             qaPairs: []
         }
@@ -635,6 +702,24 @@
         return map[status] || 'status-pending';
     }
 
+    function getPermissionText(perm) {
+        const map = {
+            public: '公开',
+            internal: '内部',
+            private: '私有'
+        };
+        return map[perm] || '未知';
+    }
+
+    function getPermissionClass(perm) {
+        const map = {
+            public: 'perm-public',
+            internal: 'perm-internal',
+            private: 'perm-private'
+        };
+        return map[perm] || 'perm-internal';
+    }
+
     // 上传文件功能
     function uploadFiles(files) {
         if (!files || files.length === 0) return;
@@ -743,6 +828,7 @@
                             <th>文件名</th>
                             <th>来源系统</th>
                             <th>解析状态</th>
+                            <th>权限</th>
                             <th>作者</th>
                             <th>更新时间</th>
                             <th>所属目录</th>
@@ -755,16 +841,18 @@
                                 <td><strong>${escapeHtml(file.name)}</strong></td>
                                 <td>${file.sourceSystem}</span>
                                 <td><span class="status-badge ${getParsingStatusClass(file.parsingStatus)}">${getParsingStatusText(file.parsingStatus)}</span></span>
+                                <td><span class="perm-badge ${getPermissionClass(file.permission)}">${getPermissionText(file.permission)}</span></span>
                                 <td>${escapeHtml(file.creator) || '-'}</span>
                                 <td>${file.updateTime}</span>
                                 <td>${includeSubdirs && file.belongDirName ? file.belongDirName : '-'}</span>
                                 <td>
                                     <button class="action-btn view-detail" data-id="${file.id}">详情</button>
+                                    <button class="action-btn perm-btn" data-id="${file.id}">权限</button>
                                     <button class="action-btn delete-btn" data-id="${file.id}" data-name="${escapeHtml(file.name)}">删除</button>
                                 </span>
                             </tr>
                         `).join('')}
-                        ${filteredFiles.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">暂无知识文件</td>' : ''}
+                        ${filteredFiles.length === 0 ? '<tr><td colspan="8" style="text-align:center;padding:40px">暂无知识文件</td>' : ''}
                     </tbody>
                 </table>
             </div>
@@ -807,7 +895,84 @@
                 deleteFile(fileId, fileName);
             });
         });
+        document.querySelectorAll('.perm-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const fileId = btn.getAttribute('data-id');
+                showPermissionModal(fileId);
+            });
+        });
     }
+
+    let currentPermissionFileId = null;
+    let currentPermissionUsers = [];
+
+    function showPermissionModal(fileId) {
+        const file = filesData.find(f => f.id === fileId);
+        if (!file) return;
+        currentPermissionFileId = fileId;
+        currentPermissionUsers = file.permittedUsers || [];
+
+        document.getElementById('permFileName').textContent = file.name;
+        const radios = document.querySelectorAll('input[name="permission"]');
+        radios.forEach(radio => {
+            radio.checked = radio.value === file.permission;
+            radio.addEventListener('change', updatePermissionHint);
+        });
+        updatePermissionHint();
+        renderPermittedUsers();
+        document.getElementById('permissionModal').style.display = 'flex';
+    }
+
+    function updatePermissionHint() {
+        const selected = document.querySelector('input[name="permission"]:checked')?.value || 'public';
+        const hints = {
+            public: { text: '公开 - 所有用户可见', color: '#1e40af', bg: '#dbeafe' },
+            internal: { text: '内部 - 仅内部员工可见', color: '#7c3aed', bg: '#ede9fe' },
+            private: { text: '私有 - 仅文件所有者可见', color: '#b45309', bg: '#fef3c7' }
+        };
+        const hint = hints[selected];
+        const hintDiv = document.getElementById('permissionHint');
+        hintDiv.textContent = hint.text;
+        hintDiv.style.color = hint.color;
+        hintDiv.style.background = hint.bg;
+    }
+
+    function renderPermittedUsers() {
+        const container = document.getElementById('permUsersList');
+        if (currentPermissionUsers.length === 0) {
+            container.innerHTML = '<div style="color:#94a3b8;text-align:center;">暂无授权用户</div>';
+            return;
+        }
+        container.innerHTML = currentPermissionUsers.map(user => `
+            <div style="padding:6px;border-bottom:1px solid #e2e8f0;">
+                <span>${escapeHtml(user)}</span>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('savePermBtn')?.addEventListener('click', () => {
+        if (!currentPermissionFileId) return;
+        const file = filesData.find(f => f.id === currentPermissionFileId);
+        if (!file) return;
+        
+        const selectedPermission = document.querySelector('input[name="permission"]:checked')?.value;
+        if (!selectedPermission) {
+            showToast('请选择访问权限');
+            return;
+        }
+        
+        file.permission = selectedPermission;
+        file.permittedUsers = currentPermissionUsers;
+        renderFileList();
+        closeModal('permissionModal');
+        showToast('权限设置已保存');
+    });
+
+    document.getElementById('closePermissionModal')?.addEventListener('click', () => closeModal('permissionModal'));
+    document.getElementById('cancelPermBtn')?.addEventListener('click', () => closeModal('permissionModal'));
+    document.getElementById('permissionModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('permissionModal')) closeModal('permissionModal');
+    });
 
     function handleFileSelect(e) {
         const files = e.target.files;
@@ -825,6 +990,10 @@
         
         const leftHtml = `
             <div class="detail-left">
+                <h4 style="margin-bottom: 12px;">文档摘要</h4>
+                <div style="background:#dbeafe; padding: 16px; border-radius: 12px; line-height: 1.6; margin-bottom: 16px; border-left: 4px solid #3b82f6;">
+                    ${escapeHtml(file.content ? file.content.substring(0, 150) + (file.content.length > 150 ? '...' : '') : '无摘要内容')}
+                </div>
                 <h4 style="margin-bottom: 12px;">文档内容</h4>
                 <div style="background:#f9fafb; padding: 16px; border-radius: 12px; line-height: 1.6; white-space: pre-wrap;">
                     ${escapeHtml(file.content || '无正文内容')}
@@ -835,7 +1004,7 @@
         const rightHtml = `
             <div class="detail-right">
                 <div class="tab-header">
-                    <button class="tab-button active" data-tab="metadata">元数据</button>
+                    <button class="tab-button active" data-tab="metadata">基础信息</button>
                     <button class="tab-button" data-tab="tags">标签</button>
                     <button class="tab-button" data-tab="qa">QA对</button>
                 </div>
@@ -857,7 +1026,6 @@
                     <div class="detail-row"><div class="detail-label">作者</div><div class="detail-value">${escapeHtml(file.creator) || '-'}</div></div>
                     <div class="detail-row"><div class="detail-label">更新时间</div><div class="detail-value">${file.updateTime}</div></div>
                     <div class="detail-row"><div class="detail-label">文件大小</div><div class="detail-value">${file.fileSize || '-'}</div></div>
-                    <div class="detail-row"><div class="detail-label">版本</div><div class="detail-value">${file.version || '-'}</div></div>
                 </div>
             `;
         };

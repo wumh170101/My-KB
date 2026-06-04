@@ -123,14 +123,7 @@
             padding: 24px 32px;
             background: #f8fafc;
         }
-        .content-card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            padding: 24px 28px;
-            margin-bottom: 24px;
-        }
-        /* Tab 样式 */
+
         .tab-container {
             background: white;
             border-radius: 16px;
@@ -257,10 +250,11 @@
         .modal-content {
             background: white;
             border-radius: 20px;
-            width: 550px;
+            width: 650px;
             max-width: 90%;
+            max-height: 85%;
+            overflow-y: auto;
             padding: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
         .modal-header {
             display: flex;
@@ -287,6 +281,42 @@
             justify-content: flex-end;
             margin-top: 20px;
         }
+        .source-tree {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 8px;
+        }
+        .source-tree-node {
+            list-style: none;
+            margin-left: 0;
+            padding-left: 0;
+        }
+        .source-tree-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            cursor: pointer;
+        }
+        .source-tree-item:hover {
+            background: #f1f5f9;
+        }
+        .source-tree-item input {
+            margin-right: 4px;
+        }
+        .source-children {
+            margin-left: 24px;
+        }
+        .selected-paths {
+            background: #f9fafb;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -304,7 +334,7 @@
 <div id="ruleModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span id="modalTitle">新增采集规则</span>
+            <span id="modalTitle">新增</span>
             <span style="cursor:pointer" id="closeModalBtn">&times;</span>
         </div>
         <div id="modalBody"></div>
@@ -315,141 +345,58 @@
     </div>
 </div>
 
+<!-- 手动选择目录/文件的模态框 -->
+<div id="sourceSelectorModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header">
+            <span>选择源系统目录/文件</span>
+            <span style="cursor:pointer" id="closeSelectorModal">&times;</span>
+        </div>
+        <div id="sourceTreeContainer"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" id="cancelSelectorBtn">取消</button>
+            <button class="btn-primary" id="confirmSelectorBtn">确认选择</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // ---------- 目录树 Mock 数据 ----------
     let directories = [
-        // 根节点1：公司级知识库
-        {
-            id: "dir_company",
-            name: "公司级知识库",
-            parentId: null,
-            department: "知识管理部",
-            responsiblePerson: "张总",
-            description: "公司级核心知识资产",
-            rules: []
-        },
-        // 公司级知识库 -> 内部知识库
-        {
-            id: "dir_internal",
-            name: "内部知识库",
-            parentId: "dir_company",
-            department: "知识管理部",
-            responsiblePerson: "李经理",
-            description: "内部运营、制度、流程等",
-            rules: []
-        },
-        // 内部知识库 -> 财富管理知识库
-        {
-            id: "dir_wealth",
-            name: "财富管理知识库",
-            parentId: "dir_internal",
-            department: "财富管理部",
-            responsiblePerson: "王总",
-            description: "财富管理相关产品、策略",
-            rules: []
-        },
-        // 内部知识库 -> 产品营销知识库
-        {
-            id: "dir_product",
-            name: "产品营销知识库",
-            parentId: "dir_internal",
-            department: "市场部",
-            responsiblePerson: "赵经理",
-            description: "产品资料、营销工具",
-            rules: []
-        },
-        // 公司级知识库 -> 外部知识库
-        {
-            id: "dir_external",
-            name: "外部知识库",
-            parentId: "dir_company",
-            department: "战略部",
-            responsiblePerson: "孙总",
-            description: "行业动态、监管信息",
-            rules: []
-        },
-        // 外部知识库 -> 监管法规知识库
-        {
-            id: "dir_regulation",
-            name: "监管法规知识库",
-            parentId: "dir_external",
-            department: "合规部",
-            responsiblePerson: "周总监",
-            description: "监管政策、法律法规",
-            rules: []
-        },
-        // 根节点2：个人知识库
-        {
-            id: "dir_personal_root",
-            name: "个人知识库",
-            parentId: null,
-            department: "个人",
-            responsiblePerson: "个人用户",
-            description: "个人学习与工作积累",
-            rules: []
-        },
-        // 个人知识库 -> 个人知识库（二级）
-        {
-            id: "dir_personal_sub",
-            name: "个人知识库",
-            parentId: "dir_personal_root",
-            department: "个人",
-            responsiblePerson: "用户本人",
-            description: "个人知识分类",
-            rules: []
-        },
-        // 个人知识库 -> 个人知识库 -> 岗位工作知识库
-        {
-            id: "dir_job",
-            name: "岗位工作知识库",
-            parentId: "dir_personal_sub",
-            department: "个人",
-            responsiblePerson: "用户本人",
-            description: "岗位职责、工作文档",
-            rules: []
-        }
+        { id: "dir_company", name: "公司级知识库", parentId: null, department: "知识管理部", responsiblePerson: "张总", description: "公司级核心知识资产", rules: [] },
+        { id: "dir_internal", name: "内部知识库", parentId: "dir_company", department: "知识管理部", responsiblePerson: "李经理", description: "内部运营、制度、流程等", rules: [] },
+        { id: "dir_wealth", name: "财富管理知识库", parentId: "dir_internal", department: "财富管理部", responsiblePerson: "王总", description: "财富管理相关产品、策略", rules: [] },
+        { id: "dir_product", name: "产品营销知识库", parentId: "dir_internal", department: "市场部", responsiblePerson: "赵经理", description: "产品资料、营销工具", rules: [] },
+        { id: "dir_external", name: "外部知识库", parentId: "dir_company", department: "战略部", responsiblePerson: "孙总", description: "行业动态、监管信息", rules: [] },
+        { id: "dir_regulation", name: "监管法规知识库", parentId: "dir_external", department: "合规部", responsiblePerson: "周总监", description: "监管政策、法律法规", rules: [] },
+        { id: "dir_personal_root", name: "个人知识库", parentId: null, department: "个人", responsiblePerson: "个人用户", description: "个人学习与工作积累", rules: [] },
+        { id: "dir_personal_sub", name: "个人知识库", parentId: "dir_personal_root", department: "个人", responsiblePerson: "用户本人", description: "个人知识分类", rules: [] },
+        { id: "dir_job", name: "岗位工作知识库", parentId: "dir_personal_sub", department: "个人", responsiblePerson: "用户本人", description: "岗位职责、工作文档", rules: [] }
     ];
 
-    // 为财富管理知识库添加示例规则
+    // 为财富管理知识库添加示例规则（定时任务，带采集范围，无负责人）
     const wealthDir = directories.find(d => d.id === "dir_wealth");
     if (wealthDir) {
         wealthDir.rules = [
             {
                 id: "rule_wealth_1",
                 sourceSystem: "crm",
-                collectionScope: "/财富管理/*产品*.pdf",
-                collectionMethod: "pull",
+                pullType: "scheduled",
+                collectionScope: "/市场部/产品资料, /销售部/报价单",
                 frequency: "daily",
                 cron: "0 3 * * *",
-                priority: "high",
-                fileTypes: ".pdf,.docx",
-                owner: "数据专员"
-            },
-            {
-                id: "rule_wealth_2",
-                sourceSystem: "anyshare",
-                collectionScope: "/财富/周报/",
-                collectionMethod: "pull",
-                frequency: "weekly",
-                priority: "medium",
-                fileTypes: ".xlsx",
-                owner: "运营"
+                priority: "high"
             }
         ];
     }
-    // 为监管法规知识库添加示例规则
     const regDir = directories.find(d => d.id === "dir_regulation");
     if (regDir) {
         regDir.rules = [
             {
                 id: "rule_reg_1",
                 sourceSystem: "anyshare",
-                collectionScope: "/监管/法规库/",
-                collectionMethod: "push",
-                frequency: "realtime",
-                priority: "high",
-                fileTypes: ".pdf",
-                owner: "合规专员"
+                pullType: "manual",
+                collectionScope: "/监管/法规库/"
             }
         ];
     }
@@ -457,7 +404,134 @@
     let currentSelectedId = "dir_company";
     let editingRuleId = null;
     let currentDirForRule = null;
-    let activeTab = "basic"; // 'basic' 或 'rules'
+    let activeTab = "basic";
+
+    // 模拟源系统的文件树数据
+    function getMockSourceTree(sourceSystem) {
+        if (sourceSystem === 'anyshare') {
+            return {
+                name: "AnyShare根目录",
+                type: "dir",
+                children: [
+                    { name: "市场部", type: "dir", children: [
+                        { name: "产品资料", type: "dir", children: [
+                            { name: "产品手册.pdf", type: "file" },
+                            { name: "白皮书.docx", type: "file" }
+                        ] },
+                        { name: "竞品分析", type: "dir", children: [
+                            { name: "竞品A报告.pdf", type: "file" }
+                        ] }
+                    ] },
+                    { name: "财务部", type: "dir", children: [
+                        { name: "预算报表.xlsx", type: "file" }
+                    ] }
+                ]
+            };
+        } else {
+            return {
+                name: "CRM根目录",
+                type: "dir",
+                children: [
+                    { name: "客户资料", type: "dir", children: [
+                        { name: "客户清单.xlsx", type: "file" }
+                    ] },
+                    { name: "销售文档", type: "dir", children: [
+                        { name: "销售培训.pdf", type: "file" }
+                    ] }
+                ]
+            };
+        }
+    }
+
+    // 递归渲染源系统文件树（带复选框）
+    function renderSourceTree(node, selectedPaths, onCheckChange, currentPath = '') {
+        const nodePath = currentPath ? currentPath + '/' + node.name : node.name;
+        const isDir = node.type === 'dir';
+        const li = document.createElement('li');
+        li.className = 'source-tree-node';
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'source-tree-item';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = nodePath;
+        checkbox.checked = selectedPaths.includes(nodePath);
+        checkbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                if (!selectedPaths.includes(nodePath)) selectedPaths.push(nodePath);
+            } else {
+                const idx = selectedPaths.indexOf(nodePath);
+                if (idx !== -1) selectedPaths.splice(idx, 1);
+            }
+            onCheckChange(selectedPaths);
+        });
+        const span = document.createElement('span');
+        span.textContent = (isDir ? '📁 ' : '📄 ') + node.name;
+        itemDiv.appendChild(checkbox);
+        itemDiv.appendChild(span);
+        li.appendChild(itemDiv);
+        if (node.children && node.children.length) {
+            const childUl = document.createElement('ul');
+            childUl.className = 'source-children';
+            node.children.forEach(child => {
+                childUl.appendChild(renderSourceTree(child, selectedPaths, onCheckChange, nodePath));
+            });
+            li.appendChild(childUl);
+        }
+        return li;
+    }
+
+    function openSourceSelector(sourceSystem, currentScope, callback) {
+        const selectedPaths = currentScope ? currentScope.split(',').map(s => s.trim()) : [];
+        const treeData = getMockSourceTree(sourceSystem);
+        const container = document.getElementById('sourceTreeContainer');
+        container.innerHTML = '';
+        const ul = document.createElement('ul');
+        ul.style.listStyle = 'none';
+        const onCheckChange = (newSelected) => {
+            const displayDiv = document.getElementById('selectorSelectedDisplay');
+            if (displayDiv) displayDiv.innerText = newSelected.join(', ') || '未选择';
+        };
+        ul.appendChild(renderSourceTree(treeData, selectedPaths, onCheckChange));
+        container.appendChild(ul);
+        const selectedDiv = document.createElement('div');
+        selectedDiv.className = 'selected-paths';
+        selectedDiv.id = 'selectorSelectedDisplay';
+        selectedDiv.innerText = selectedPaths.join(', ') || '未选择';
+        container.appendChild(selectedDiv);
+        document.getElementById('sourceSelectorModal').style.display = 'flex';
+        const confirmBtn = document.getElementById('confirmSelectorBtn');
+        const cancelBtn = document.getElementById('cancelSelectorBtn');
+        const closeBtn = document.getElementById('closeSelectorModal');
+        const handleConfirm = () => {
+            const finalPaths = selectedPaths;
+            document.getElementById('sourceSelectorModal').style.display = 'none';
+            cleanup();
+            callback(finalPaths.join(', '));
+        };
+        const handleCancel = () => {
+            document.getElementById('sourceSelectorModal').style.display = 'none';
+            cleanup();
+            callback(currentScope || '');
+        };
+        const cleanup = () => {
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            closeBtn.removeEventListener('click', handleCancel);
+        };
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+        closeBtn.addEventListener('click', handleCancel);
+    }
+
+    function getSystemName(system) {
+        const map = { crm:'CRM', anyshare:'AnyShare' };
+        return map[system] || system;
+    }
+
+    function getFrequencyText(freq) {
+        const map = { realtime:'实时', hourly:'每小时', daily:'每日', weekly:'每周', manual:'手动' };
+        return map[freq] || freq;
+    }
 
     function getDirectoryById(id) {
         return directories.find(d => d.id === id);
@@ -468,7 +542,6 @@
         if (currentSelectedId) renderDetail(currentSelectedId);
     }
 
-    // 构建树：指定根节点顺序（公司级知识库在前，个人知识库在后）
     function buildTree(flatList) {
         const map = new Map();
         const roots = [];
@@ -481,13 +554,11 @@
                 roots.push(node);
             }
         });
-        // 子节点按名称排序
         const sortChildren = (nodes) => {
             nodes.sort((a, b) => a.name.localeCompare(b.name));
             nodes.forEach(n => sortChildren(n.children));
         };
         sortChildren(roots);
-        // 根节点自定义顺序：公司级知识库 -> 个人知识库
         roots.sort((a, b) => {
             if (a.name === "公司级知识库" && b.name === "个人知识库") return -1;
             if (a.name === "个人知识库" && b.name === "公司级知识库") return 1;
@@ -538,12 +609,15 @@
         treeData.forEach(root => { ul.appendChild(renderNode(root)); });
         container.innerHTML = '';
         container.appendChild(ul);
-        // 事件委托
         container.querySelectorAll('.node-item').forEach(el => {
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const id = el.getAttribute('data-id');
-                if (id) { currentSelectedId = id; renderTree(); renderDetail(currentSelectedId); }
+                if (id) {
+                    currentSelectedId = id;
+                    renderTree();
+                    renderDetail(currentSelectedId);
+                }
             });
             const actions = el.querySelectorAll('.action-icon');
             actions.forEach(btn => {
@@ -555,89 +629,6 @@
                     if (action === 'edit') showEditDialog(id);
                     if (action === 'delete') deleteDirectory(id);
                 });
-            });
-        });
-    }
-
-    function getSystemName(system) {
-        const map = { crm:'CRM', anyshare:'AnyShare' };
-        return map[system] || system;
-    }
-
-    function getFrequencyText(freq) {
-        const map = { realtime:'实时', hourly:'每小时', daily:'每日', weekly:'每周', manual:'手动' };
-        return map[freq] || freq;
-    }
-
-    // 渲染右侧内容，使用左右两个Tab
-    function renderDetail(id) {
-        const dir = getDirectoryById(id);
-        const mainDiv = document.getElementById('mainContent');
-        if (!dir) { mainDiv.innerHTML = `<div class="content-card empty-tip">未找到目录</div>`; return; }
-
-        // 构建Tab容器
-        const tabHtml = `
-            <div class="tab-container">
-                <div class="tab-header">
-                    <button class="tab-button ${activeTab === 'basic' ? 'active' : ''}" data-tab="basic">基本信息</button>
-                    <button class="tab-button ${activeTab === 'rules' ? 'active' : ''}" data-tab="rules">采集规则</button>
-                </div>
-                <div class="tab-content" id="tabContent"></div>
-            </div>
-        `;
-        mainDiv.innerHTML = tabHtml;
-
-        // 渲染当前激活的Tab内容
-        const renderTabContent = () => {
-            const tabContentDiv = document.getElementById('tabContent');
-            if (!tabContentDiv) return;
-            if (activeTab === 'basic') {
-                tabContentDiv.innerHTML = renderBasicInfo(dir);
-                // 绑定基本信息保存事件
-                document.getElementById('saveDirInfoBtn')?.addEventListener('click', () => {
-                    const newName = document.getElementById('editDirName').value.trim();
-                    if (!newName) { showToast('目录名称不能为空'); return; }
-                    dir.name = newName;
-                    dir.parentId = document.getElementById('editParentId').value || null;
-                    dir.department = document.getElementById('editDepartment').value;
-                    dir.responsiblePerson = document.getElementById('editResponsiblePerson').value;
-                    dir.description = document.getElementById('editDescription').value;
-                    saveDirectories();
-                    showToast('目录信息已更新');
-                });
-                document.getElementById('cancelDirBtn')?.addEventListener('click', () => { renderDetail(id); });
-            } else {
-                tabContentDiv.innerHTML = renderRulesManagement(dir);
-                // 绑定规则按钮事件
-                document.getElementById('addRuleBtn')?.addEventListener('click', () => { openRuleModal(null, dir.id); });
-                document.querySelectorAll('.edit-rule-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const ruleId = btn.getAttribute('data-id');
-                        openRuleModal(ruleId, dir.id);
-                    });
-                });
-                document.querySelectorAll('.delete-rule-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const ruleId = btn.getAttribute('data-id');
-                        deleteRuleFromDir(dir.id, ruleId);
-                    });
-                });
-            }
-        };
-
-        renderTabContent();
-
-        // Tab切换事件
-        const tabButtons = document.querySelectorAll('.tab-button');
-        tabButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tab = btn.getAttribute('data-tab');
-                if (tab === activeTab) return;
-                activeTab = tab;
-                // 更新按钮样式
-                tabButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                renderTabContent();
             });
         });
     }
@@ -688,17 +679,18 @@
         } else {
             rulesHtml = `<div class="rule-list">`;
             rules.forEach(rule => {
+                const pullTypeText = rule.pullType === 'scheduled' ? '定时任务拉取' : '手动即时拉取';
+                const scopeText = rule.collectionScope ? `采集范围: ${rule.collectionScope}` : '未指定范围';
+                const scheduleInfo = rule.pullType === 'scheduled' ? `${getFrequencyText(rule.frequency)}` : '';
+                const priorityInfo = rule.priority ? `优先级: ${rule.priority === 'high' ? '高' : (rule.priority === 'medium' ? '中' : '低')}` : '';
                 rulesHtml += `
                     <div class="rule-item" data-rule-id="${rule.id}">
                         <div class="rule-info">
-                            <strong>${getSystemName(rule.sourceSystem)}</strong>
+                            <strong>${getSystemName(rule.sourceSystem)} (${pullTypeText})</strong>
                             <div class="rule-detail">
-                                <span>范围: ${escapeHtml(rule.collectionScope || '-')}</span>
-                                <span>${rule.collectionMethod === 'pull' ? '平台拉取' : '源系统推送'}</span>
-                                <span>${getFrequencyText(rule.frequency)}</span>
-                                <span>优先级: ${rule.priority === 'high' ? '高' : (rule.priority === 'medium' ? '中' : '低')}</span>
-                                <span>类型: ${rule.fileTypes || '*'}</span>
-                                <span>规则负责人: ${rule.owner || '-'}</span>
+                                <span>${scopeText}</span>
+                                ${scheduleInfo ? `<span>${scheduleInfo}</span>` : ''}
+                                ${priorityInfo ? `<span>${priorityInfo}</span>` : ''}
                             </div>
                         </div>
                         <div class="rule-actions">
@@ -713,9 +705,71 @@
         return `
             ${rulesHtml}
             <div style="margin-top: 20px;">
-                <button class="btn-primary" id="addRuleBtn">+ 新增采集规则</button>
+                <button class="btn-primary" id="addRuleBtn">+ 新增</button>
             </div>
         `;
+    }
+
+    function renderDetail(id) {
+        const dir = getDirectoryById(id);
+        const mainDiv = document.getElementById('mainContent');
+        if (!dir) { mainDiv.innerHTML = `<div class="content-card empty-tip">未找到目录</div>`; return; }
+        const tabHtml = `
+            <div class="tab-container">
+                <div class="tab-header">
+                    <button class="tab-button ${activeTab === 'basic' ? 'active' : ''}" data-tab="basic">基本信息</button>
+                    <button class="tab-button ${activeTab === 'rules' ? 'active' : ''}" data-tab="rules">采集规则</button>
+                </div>
+                <div class="tab-content" id="tabContent"></div>
+            </div>
+        `;
+        mainDiv.innerHTML = tabHtml;
+        const renderTabContent = () => {
+            const tabContentDiv = document.getElementById('tabContent');
+            if (!tabContentDiv) return;
+            if (activeTab === 'basic') {
+                tabContentDiv.innerHTML = renderBasicInfo(dir);
+                document.getElementById('saveDirInfoBtn')?.addEventListener('click', () => {
+                    const newName = document.getElementById('editDirName').value.trim();
+                    if (!newName) { showToast('目录名称不能为空'); return; }
+                    dir.name = newName;
+                    dir.parentId = document.getElementById('editParentId').value || null;
+                    dir.department = document.getElementById('editDepartment').value;
+                    dir.responsiblePerson = document.getElementById('editResponsiblePerson').value;
+                    dir.description = document.getElementById('editDescription').value;
+                    saveDirectories();
+                    showToast('目录信息已更新');
+                });
+                document.getElementById('cancelDirBtn')?.addEventListener('click', () => { renderDetail(id); });
+            } else {
+                tabContentDiv.innerHTML = renderRulesManagement(dir);
+                document.getElementById('addRuleBtn')?.addEventListener('click', () => { openRuleModal(null, dir.id); });
+                document.querySelectorAll('.edit-rule-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const ruleId = btn.getAttribute('data-id');
+                        openRuleModal(ruleId, dir.id);
+                    });
+                });
+                document.querySelectorAll('.delete-rule-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const ruleId = btn.getAttribute('data-id');
+                        deleteRuleFromDir(dir.id, ruleId);
+                    });
+                });
+            }
+        };
+        renderTabContent();
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tab = btn.getAttribute('data-tab');
+                if (tab === activeTab) return;
+                activeTab = tab;
+                tabButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderTabContent();
+            });
+        });
     }
 
     function generateParentOptions(currentId) {
@@ -789,7 +843,18 @@
         }
     }
 
-    // 规则弹窗
+    function deleteRuleFromDir(dirId, ruleId) {
+        const dir = getDirectoryById(dirId);
+        if (!dir) return;
+        if (confirm('确定删除该采集规则吗？')) {
+            dir.rules = dir.rules.filter(r => r.id !== ruleId);
+            saveDirectories();
+            renderDetail(currentSelectedId);
+            showToast('规则已删除');
+        }
+    }
+
+    // 打开规则编辑/新增模态框，无规则负责人字段
     function openRuleModal(ruleId, dirId) {
         const dir = getDirectoryById(dirId);
         if (!dir) return;
@@ -802,8 +867,15 @@
         }
         const modal = document.getElementById('ruleModal');
         const modalTitle = document.getElementById('modalTitle');
-        modalTitle.innerText = ruleId ? '编辑采集规则' : '新增采集规则';
+        modalTitle.innerText = ruleId ? '编辑' : '新增';
         const modalBody = document.getElementById('modalBody');
+
+        const pullType = rule?.pullType || 'scheduled';
+        const frequency = rule?.frequency || 'daily';
+        const cron = rule?.cron || '';
+        const collectionScope = rule?.collectionScope || '';
+        const priority = rule?.priority || 'medium';
+
         modalBody.innerHTML = `
             <div class="form-group">
                 <label>源系统 *</label>
@@ -813,78 +885,103 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>采集范围（路径/关键字）</label>
-                <input type="text" id="ruleScope" value="${escapeHtml(rule?.collectionScope || '')}" placeholder="例如：/市场部/竞品分析/*月报*.pdf">
-            </div>
-            <div class="form-group">
-                <label>采集方式</label>
-                <select id="ruleMethod">
-                    <option value="pull" ${rule?.collectionMethod === 'pull' ? 'selected' : ''}>平台拉取</option>
-                    <option value="push" ${rule?.collectionMethod === 'push' ? 'selected' : ''}>源系统推送</option>
+                <label>拉取类型</label>
+                <select id="pullType">
+                    <option value="scheduled" ${pullType === 'scheduled' ? 'selected' : ''}>定时任务拉取</option>
+                    <option value="manual" ${pullType === 'manual' ? 'selected' : ''}>手动即时拉取</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>采集频率</label>
-                <select id="ruleFrequency">
-                    <option value="realtime" ${rule?.frequency === 'realtime' ? 'selected' : ''}>实时（监听）</option>
-                    <option value="hourly" ${rule?.frequency === 'hourly' ? 'selected' : ''}>每小时</option>
-                    <option value="daily" ${rule?.frequency === 'daily' ? 'selected' : ''}>每日</option>
-                    <option value="weekly" ${rule?.frequency === 'weekly' ? 'selected' : ''}>每周</option>
-                    <option value="manual" ${rule?.frequency === 'manual' ? 'selected' : ''}>手动触发</option>
-                </select>
+                <label>采集内容</label>
+                <div>
+                    <button type="button" id="selectCollectionScopeBtn" class="btn-secondary">选择目录/文件</button>
+                </div>
+                <div id="collectionScopeDisplay" class="selected-paths">${escapeHtml(collectionScope) || '未选择'}</div>
+                <input type="hidden" id="collectionScopeInput" value="${escapeHtml(collectionScope)}">
             </div>
-            <div class="form-group" id="cronGroup" style="${rule?.frequency === 'daily' || rule?.frequency === 'weekly' ? '' : 'display:none'}">
-                <label>Cron表达式（分 时 日 月 周）</label>
-                <input type="text" id="ruleCron" value="${escapeHtml(rule?.cron || '')}" placeholder="例如 0 2 * * *">
-                <div class="cron-hint">示例：0 2 * * * 表示每天凌晨2点执行</div>
+            <div id="scheduledConfig" style="${pullType === 'scheduled' ? '' : 'display:none'}">
+                <div class="form-group">
+                    <label>采集频率</label>
+                    <select id="ruleFrequency">
+                        <option value="hourly" ${frequency === 'hourly' ? 'selected' : ''}>每小时</option>
+                        <option value="daily" ${frequency === 'daily' ? 'selected' : ''}>每日</option>
+                        <option value="weekly" ${frequency === 'weekly' ? 'selected' : ''}>每周</option>
+                    </select>
+                </div>
+                <div class="form-group" id="cronGroup" style="${frequency === 'daily' || frequency === 'weekly' ? '' : 'display:none'}">
+                    <label>Cron表达式（分 时 日 月 周）</label>
+                    <input type="text" id="ruleCron" value="${escapeHtml(cron)}" placeholder="例如 0 2 * * *">
+                    <div class="cron-hint">示例：0 2 * * * 表示每天凌晨2点执行</div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>优先级</label>
-                <select id="rulePriority">
-                    <option value="high" ${rule?.priority === 'high' ? 'selected' : ''}>高</option>
-                    <option value="medium" ${rule?.priority === 'medium' ? 'selected' : ''}>中</option>
-                    <option value="low" ${rule?.priority === 'low' ? 'selected' : ''}>低</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>文件类型过滤</label>
-                <input type="text" id="ruleFileTypes" value="${escapeHtml(rule?.fileTypes || '.pdf,.docx')}" placeholder=".pdf,.docx">
-            </div>
-            <div class="form-group">
-                <label>规则负责人</label>
-                <input type="text" id="ruleOwner" value="${escapeHtml(rule?.owner || '')}" placeholder="负责人姓名">
+            <div id="priorityGroup" style="${pullType === 'scheduled' ? '' : 'display:none'}">
+                <div class="form-group">
+                    <label>优先级</label>
+                    <select id="rulePriority">
+                        <option value="high" ${priority === 'high' ? 'selected' : ''}>高</option>
+                        <option value="medium" ${priority === 'medium' ? 'selected' : ''}>中</option>
+                        <option value="low" ${priority === 'low' ? 'selected' : ''}>低</option>
+                    </select>
+                </div>
             </div>
         `;
-        modal.style.display = 'flex';
+
+        const pullTypeSelect = document.getElementById('pullType');
+        const scheduledDiv = document.getElementById('scheduledConfig');
+        const priorityGroup = document.getElementById('priorityGroup');
         const freqSelect = document.getElementById('ruleFrequency');
         const cronGroup = document.getElementById('cronGroup');
-        const updateCronGroup = () => {
-            cronGroup.style.display = (freqSelect.value === 'daily' || freqSelect.value === 'weekly') ? '' : 'none';
-        };
-        freqSelect.addEventListener('change', updateCronGroup);
-        updateCronGroup();
-    }
 
-    function closeModal() {
-        document.getElementById('ruleModal').style.display = 'none';
-        editingRuleId = null;
-        currentDirForRule = null;
+        pullTypeSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val === 'scheduled') {
+                scheduledDiv.style.display = '';
+                priorityGroup.style.display = '';
+            } else {
+                scheduledDiv.style.display = 'none';
+                priorityGroup.style.display = 'none';
+            }
+        });
+        if (freqSelect) {
+            freqSelect.addEventListener('change', () => {
+                cronGroup.style.display = (freqSelect.value === 'daily' || freqSelect.value === 'weekly') ? '' : 'none';
+            });
+        }
+        const selectBtn = document.getElementById('selectCollectionScopeBtn');
+        if (selectBtn) {
+            selectBtn.addEventListener('click', () => {
+                const sourceSystem = document.getElementById('ruleSourceSystem').value;
+                const currentScope = document.getElementById('collectionScopeInput').value;
+                openSourceSelector(sourceSystem, currentScope, (newScope) => {
+                    document.getElementById('collectionScopeInput').value = newScope;
+                    document.getElementById('collectionScopeDisplay').innerText = newScope || '未选择';
+                });
+            });
+        }
+        modal.style.display = 'flex';
     }
 
     function saveRuleFromModal() {
         if (!currentDirForRule) return;
         const dir = getDirectoryById(currentDirForRule);
         if (!dir) return;
-        const ruleData = {
+        const pullType = document.getElementById('pullType').value;
+        const collectionScope = document.getElementById('collectionScopeInput').value;
+        let ruleData = {
             sourceSystem: document.getElementById('ruleSourceSystem').value,
-            collectionScope: document.getElementById('ruleScope').value,
-            collectionMethod: document.getElementById('ruleMethod').value,
-            frequency: document.getElementById('ruleFrequency').value,
-            cron: document.getElementById('ruleCron')?.value || '',
-            priority: document.getElementById('rulePriority').value,
-            fileTypes: document.getElementById('ruleFileTypes').value,
-            owner: document.getElementById('ruleOwner').value
+            pullType: pullType,
+            collectionScope: collectionScope,
         };
+        if (pullType === 'scheduled') {
+            ruleData.frequency = document.getElementById('ruleFrequency').value;
+            ruleData.cron = document.getElementById('ruleCron')?.value || '';
+            ruleData.collectionMethod = 'pull';
+            ruleData.priority = document.getElementById('rulePriority').value;
+        } else {
+            ruleData.collectionMethod = 'manual';
+            ruleData.frequency = 'manual';
+            ruleData.cron = '';
+        }
         if (editingRuleId) {
             const idx = dir.rules.findIndex(r => r.id === editingRuleId);
             if (idx !== -1) {
@@ -901,15 +998,10 @@
         renderDetail(currentSelectedId);
     }
 
-    function deleteRuleFromDir(dirId, ruleId) {
-        const dir = getDirectoryById(dirId);
-        if (!dir) return;
-        if (confirm('确定删除该采集规则吗？')) {
-            dir.rules = dir.rules.filter(r => r.id !== ruleId);
-            saveDirectories();
-            renderDetail(currentSelectedId);
-            showToast('规则已删除');
-        }
+    function closeModal() {
+        document.getElementById('ruleModal').style.display = 'none';
+        editingRuleId = null;
+        currentDirForRule = null;
     }
 
     document.getElementById('addRootBtn')?.addEventListener('click', () => {
@@ -934,7 +1026,12 @@
     document.getElementById('closeModalBtn')?.addEventListener('click', closeModal);
     document.getElementById('cancelModalBtn')?.addEventListener('click', closeModal);
     document.getElementById('saveRuleBtn')?.addEventListener('click', saveRuleFromModal);
-    window.addEventListener('click', (e) => { if (e.target === document.getElementById('ruleModal')) closeModal(); });
+    document.getElementById('closeSelectorModal')?.addEventListener('click', () => document.getElementById('sourceSelectorModal').style.display = 'none');
+    document.getElementById('cancelSelectorBtn')?.addEventListener('click', () => document.getElementById('sourceSelectorModal').style.display = 'none');
+    window.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('ruleModal')) closeModal();
+        if (e.target === document.getElementById('sourceSelectorModal')) document.getElementById('sourceSelectorModal').style.display = 'none';
+    });
 
     function showToast(msg, isError = false) {
         const toast = document.getElementById('toastMsg');
