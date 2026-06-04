@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>知识管理平台 - 知识管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f6;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            z-index: 2;
+        }
+
+        .sidebar-header {
+            padding: 20px 16px 12px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .tree-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 8px 20px;
+        }
+
+        .tree-node {
+            list-style: none;
+            margin-left: 0;
+            padding-left: 0;
+        }
+
+        .node-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .node-item:hover {
+            background: #f1f5f9;
+        }
+
+        .node-item.active {
+            background: #eef2ff;
+            color: #2563eb;
+            font-weight: 500;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .node-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .node-icon {
+            font-size: 16px;
+            width: 20px;
+        }
+
+        .node-name {
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .children {
+            margin-left: 28px;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            background: #f8fafc;
+        }
+
+        .directory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .directory-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .filter-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .filter-group.checkbox-group {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+        }
+        .filter-group.checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+
+        .search-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .upload-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .file-table-container {
+            background: white;
+            border-radius: 16px;
+            overflow-x: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .file-table th {
+            text-align: left;
+            padding: 16px 12px;
+            background: #f9fafb;
+            font-weight: 600;
+            font-size: 13px;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .file-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .file-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-processing {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .status-completed {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-failed {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+
+        .action-btn:hover {
+            background: #eef2ff;
+        }
+
+        .delete-btn {
+            color: #ef4444;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1100;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 1000px;
+            max-width: 90%;
+            max-height: 85%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .detail-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .detail-left {
+            width: 50%;
+            border-right: 1px solid #e2e8f0;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .detail-right {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f9fafb;
+            padding: 0 16px;
+        }
+        .tab-button {
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-button.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 16px;
+        }
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .detail-label {
+            width: 100px;
+            color: #64748b;
+        }
+        .detail-value {
+            flex: 1;
+            color: #1e293b;
+        }
+        .qa-item {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .qa-question {
+            font-weight: 600;
+            color: #3b82f6;
+            margin-bottom: 6px;
+        }
+        .qa-answer {
+            color: #334155;
+            line-height: 1.5;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            z-index: 1200;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>📁 知识目录</h2>
+        </div>
+        <div class="tree-container" id="treeContainer"></div>
+    </div>
+    <div class="main-content" id="mainContent"></div>
+</div>
+<div id="toastMsg" class="toast">提示</div>
+
+<!-- 详情模态框 -->
+<div id="detailModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>文件详情</span>
+            <span class="close-modal" id="closeDetailModal">&times;</span>
+        </div>
+        <div class="detail-body" id="detailBody"></div>
+    </div>
+</div>
+
+<!-- 隐藏的文件上传 input -->
+<input type="file" id="fileUploadInput" style="display:none" multiple>
+
+<script>
+    // ---------- 目录数据 ----------
+    let directories = [
+        { id: "dir_company", name: "公司级知识库", parentId: null },
+        { id: "dir_internal", name: "内部知识库", parentId: "dir_company" },
+        { id: "dir_wealth", name: "财富管理知识库", parentId: "dir_internal" },
+        { id: "dir_product", name: "产品营销知识库", parentId: "dir_internal" },
+        { id: "dir_external", name: "外部知识库", parentId: "dir_company" },
+        { id: "dir_regulation", name: "监管法规知识库", parentId: "dir_external" },
+        { id: "dir_personal_root", name: "个人知识库", parentId: null },
+        { id: "dir_personal_sub", name: "个人知识库", parentId: "dir_personal_root" },
+        { id: "dir_job", name: "岗位工作知识库", parentId: "dir_personal_sub" }
+    ];
+
+    // ---------- Mock 文件数据 ----------
+    let filesData = [
+        { 
+            id: "file1", name: "2026年财富管理策略报告.pdf", directoryId: "dir_wealth", sourceSystem: "CRM", 
+            tags: ["策略", "年度报告"], parsingStatus: "completed", creator: "张明", updateTime: "2026-02-10", 
+            fileSize: "2.3 MB", version: "v1.0",
+            content: "2026年财富管理策略报告核心观点：\n1. 宏观经济展望温和复苏；\n2. 权益类资产配置比例建议提升至40%；\n3. 债券市场谨慎乐观；\n4. 另类投资关注私募股权。",
+            qaPairs: [
+                { question: "2026年权益类资产配置建议是多少？", answer: "建议提升至40%。" },
+                { question: "报告对债券市场的态度是什么？", answer: "谨慎乐观。" }
+            ]
+        },
+        { 
+            id: "file2", name: "私募产品尽调模板.docx", directoryId: "dir_wealth", sourceSystem: "AnyShare", 
+            tags: ["尽调", "模板"], parsingStatus: "processing", creator: "李芳", updateTime: "2026-03-01",
+            fileSize: "0.8 MB", version: "v2.1",
+            content: "本模板包括：\n一、管理人基本情况\n二、投资策略与风控\n三、历史业绩归因\n四、费率结构分析。",
+            qaPairs: [
+                { question: "尽调模板包含哪些部分？", answer: "包含管理人基本情况、投资策略与风控、历史业绩归因、费率结构分析。" }
+            ]
+        },
+        { 
+            id: "file3", name: "新发基金营销话术.pdf", directoryId: "dir_product", sourceSystem: "CRM", 
+            tags: ["营销", "话术"], parsingStatus: "completed", creator: "王丽", updateTime: "2026-02-28",
+            fileSize: "1.1 MB", version: "v3.0",
+            content: "话术要点：\n- 强调基金经理历史业绩\n- 突出产品风险控制优势\n- 常见客户异议解答",
+            qaPairs: [
+                { question: "基金营销话术的核心要点是什么？", answer: "强调基金经理历史业绩、突出风险控制优势、解答常见异议。" }
+            ]
+        },
+        { 
+            id: "file4", name: "竞品对比分析-XX产品.pptx", directoryId: "dir_product", sourceSystem: "AnyShare", 
+            tags: ["竞品"], parsingStatus: "failed", creator: "赵岩", updateTime: "2026-01-15",
+            fileSize: "4.2 MB", version: "v0.9",
+            content: "竞品A费率结构、竞品B历史收益、我司优势总结。",
+            qaPairs: []
+        },
+        { 
+            id: "file5", name: "证券期货投资者适当性管理办法.pdf", directoryId: "dir_regulation", sourceSystem: "AnyShare", 
+            tags: ["法规", "适当性"], parsingStatus: "completed", creator: "合规部", updateTime: "2026-02-20",
+            fileSize: "1.5 MB", version: "官方版",
+            content: "本办法旨在规范证券期货投资者适当性管理，保护投资者合法权益。",
+            qaPairs: [
+                { question: "投资者适当性管理办法的目的是什么？", answer: "规范适当性管理，保护投资者合法权益。" }
+            ]
+        },
+        { 
+            id: "file6", name: "2026年反洗钱新规解读.docx", directoryId: "dir_regulation", sourceSystem: "CRM", 
+            tags: ["反洗钱", "解读"], parsingStatus: "pending", creator: "风控中心", updateTime: "2026-03-05",
+            fileSize: "0.6 MB", version: "初稿",
+            content: "新规强化客户身份识别，提高大额交易报告标准。",
+            qaPairs: [
+                { question: "反洗钱新规主要强化了什么？", answer: "强化客户身份识别，提高大额交易报告标准。" }
+            ]
+        },
+        { 
+            id: "file7", name: "客户经理工作手册.pdf", directoryId: "dir_job", sourceSystem: "AnyShare", 
+            tags: ["岗位", "SOP"], parsingStatus: "completed", creator: "培训部", updateTime: "2025-12-10",
+            fileSize: "3.0 MB", version: "2025版",
+            content: "每日工作流程：晨会、客户拜访、日志填写；合规红线：不得承诺收益。",
+            qaPairs: [
+                { question: "客户经理每日工作流程包括哪些？", answer: "晨会、客户拜访、日志填写。" },
+                { question: "合规红线是什么？", answer: "不得承诺收益。" }
+            ]
+        },
+        { 
+            id: "file8", name: "产品培训课件.pptx", directoryId: "dir_job", sourceSystem: "CRM", 
+            tags: ["培训"], parsingStatus: "completed", creator: "市场部", updateTime: "2026-01-20",
+            fileSize: "5.1 MB", version: "Q1更新",
+            content: "课件第一部分：产品定位；第二部分：销售技巧。",
+            qaPairs: []
+        }
+    ];
+
+    let currentSelectedDirId = "dir_company";
+    let currentFilter = {
+        keyword: "",
+        sourceSystem: "",
+        parsingStatus: ""
+    };
+
+    function getDirectoryById(id) {
+        return directories.find(d => d.id === id);
+    }
+
+    function getAllSubDirectoryIds(dirId) {
+        let ids = [dirId];
+        const children = directories.filter(d => d.parentId === dirId);
+        children.forEach(child => {
+            ids = ids.concat(getAllSubDirectoryIds(child.id));
+        });
+        return ids;
+    }
+
+    function getFilesForDisplay(dirId, includeSubdirs) {
+        let targetIds = includeSubdirs ? getAllSubDirectoryIds(dirId) : [dirId];
+        let files = filesData.filter(f => targetIds.includes(f.directoryId));
+        files = files.map(f => ({
+            ...f,
+            belongDirName: getDirectoryById(f.directoryId)?.name || ''
+        }));
+        return files;
+    }
+
+    function buildTree() {
+        const map = new Map();
+        const roots = [];
+        directories.forEach(item => { map.set(item.id, { ...item, children: [] }); });
+        directories.forEach(item => {
+            const node = map.get(item.id);
+            if (item.parentId && map.has(item.parentId)) {
+                map.get(item.parentId).children.push(node);
+            } else {
+                roots.push(node);
+            }
+        });
+        const sortChildren = (nodes) => {
+            nodes.sort((a, b) => a.name.localeCompare(b.name));
+            nodes.forEach(n => sortChildren(n.children));
+        };
+        sortChildren(roots);
+        roots.sort((a, b) => {
+            if (a.name === "公司级知识库" && b.name === "个人知识库") return -1;
+            if (a.name === "个人知识库" && b.name === "公司级知识库") return 1;
+            return a.name.localeCompare(b.name);
+        });
+        return roots;
+    }
+
+    function renderTree() {
+        const treeData = buildTree();
+        const container = document.getElementById('treeContainer');
+        if (!container) return;
+        const renderNode = (node) => {
+            const isActive = currentSelectedDirId === node.id;
+            const li = document.createElement('li');
+            li.className = 'tree-node';
+            const itemDiv = document.createElement('div');
+            itemDiv.className = `node-item ${isActive ? 'active' : ''}`;
+            itemDiv.setAttribute('data-id', node.id);
+            const contentSpan = document.createElement('div');
+            contentSpan.className = 'node-content';
+            contentSpan.innerHTML = `<span class="node-icon">${node.children && node.children.length ? '📂' : '📄'}</span><span class="node-name">${escapeHtml(node.name)}</span>`;
+            itemDiv.appendChild(contentSpan);
+            li.appendChild(itemDiv);
+            if (node.children && node.children.length) {
+                const childUl = document.createElement('ul');
+                childUl.className = 'children';
+                node.children.forEach(child => { childUl.appendChild(renderNode(child)); });
+                li.appendChild(childUl);
+            }
+            return li;
+        };
+        const ul = document.createElement('ul');
+        ul.style.listStyle = 'none';
+        ul.style.paddingLeft = '0';
+        treeData.forEach(root => { ul.appendChild(renderNode(root)); });
+        container.innerHTML = '';
+        container.appendChild(ul);
+        container.querySelectorAll('.node-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = el.getAttribute('data-id');
+                if (id) {
+                    currentSelectedDirId = id;
+                    renderTree();
+                    renderFileList();
+                }
+            });
+        });
+    }
+
+    function getParsingStatusText(status) {
+        const map = {
+            pending: '待处理',
+            processing: '处理中',
+            completed: '成功',
+            failed: '失败'
+        };
+        return map[status] || status;
+    }
+
+    function getParsingStatusClass(status) {
+        const map = {
+            pending: 'status-pending',
+            processing: 'status-processing',
+            completed: 'status-completed',
+            failed: 'status-failed'
+        };
+        return map[status] || 'status-pending';
+    }
+
+    // 上传文件功能
+    function uploadFiles(files) {
+        if (!files || files.length === 0) return;
+        const targetDirId = currentSelectedDirId;
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+        let addedCount = 0;
+        for (let file of files) {
+            const newId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+            let fileSize = file.size ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : '未知';
+            const previewContent = `文件名称：${file.name}\n上传时间：${dateStr}\n文件大小：${fileSize}\n（此为模拟内容，实际应解析文件正文）`;
+            const newFile = {
+                id: newId,
+                name: file.name,
+                directoryId: targetDirId,
+                sourceSystem: "本地上传",
+                tags: [],
+                parsingStatus: "pending",
+                creator: "当前用户",
+                updateTime: dateStr,
+                fileSize: fileSize,
+                version: "1.0",
+                content: previewContent,
+                qaPairs: []
+            };
+            filesData.push(newFile);
+            addedCount++;
+        }
+        if (addedCount > 0) {
+            showToast(`成功上传 ${addedCount} 个文件到当前目录`);
+            renderFileList();
+        }
+    }
+
+    // 删除文件功能
+    function deleteFile(fileId, fileName) {
+        if (confirm(`确定要删除文件“${fileName}”吗？此操作不可恢复。`)) {
+            const index = filesData.findIndex(f => f.id === fileId);
+            if (index !== -1) {
+                filesData.splice(index, 1);
+                showToast(`文件“${fileName}”已删除`);
+                renderFileList();
+            } else {
+                showToast('文件不存在', true);
+            }
+        }
+    }
+
+    function renderFileList() {
+        const mainDiv = document.getElementById('mainContent');
+        const dir = getDirectoryById(currentSelectedDirId);
+        const dirName = dir ? dir.name : "知识库";
+
+        const includeSubdirsCheckbox = document.getElementById('includeSubdirsCheckbox');
+        const includeSubdirs = includeSubdirsCheckbox ? includeSubdirsCheckbox.checked : false;
+
+        let rawFiles = getFilesForDisplay(currentSelectedDirId, includeSubdirs);
+
+        let filteredFiles = rawFiles.filter(f => {
+            if (currentFilter.keyword && !f.name.toLowerCase().includes(currentFilter.keyword.toLowerCase())) return false;
+            if (currentFilter.sourceSystem && f.sourceSystem !== currentFilter.sourceSystem) return false;
+            if (currentFilter.parsingStatus && f.parsingStatus !== currentFilter.parsingStatus) return false;
+            return true;
+        });
+
+        const html = `
+            <div class="directory-header">
+                <div class="directory-title">${escapeHtml(dirName)}</div>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>文件名</label>
+                    <input type="text" id="filterKeyword" value="${escapeHtml(currentFilter.keyword)}" placeholder="输入文件名关键字">
+                </div>
+                <div class="filter-group">
+                    <label>来源系统</label>
+                    <select id="filterSource">
+                        <option value="">全部</option>
+                        <option value="CRM" ${currentFilter.sourceSystem === 'CRM' ? 'selected' : ''}>CRM</option>
+                        <option value="AnyShare" ${currentFilter.sourceSystem === 'AnyShare' ? 'selected' : ''}>AnyShare</option>
+                        <option value="本地上传" ${currentFilter.sourceSystem === '本地上传' ? 'selected' : ''}>本地上传</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>解析状态</label>
+                    <select id="filterStatus">
+                        <option value="">全部</option>
+                        <option value="pending" ${currentFilter.parsingStatus === 'pending' ? 'selected' : ''}>待处理</option>
+                        <option value="processing" ${currentFilter.parsingStatus === 'processing' ? 'selected' : ''}>处理中</option>
+                        <option value="completed" ${currentFilter.parsingStatus === 'completed' ? 'selected' : ''}>成功</option>
+                        <option value="failed" ${currentFilter.parsingStatus === 'failed' ? 'selected' : ''}>失败</option>
+                    </select>
+                </div>
+                <div class="filter-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="includeSubdirsCheckbox" ${includeSubdirs ? 'checked' : ''}> 包含子目录
+                    </label>
+                </div>
+                <button class="search-btn" id="searchBtn">搜索</button>
+                <button class="upload-btn" id="uploadBtn">上传文件</button>
+            </div>
+            <div class="file-table-container">
+                <table class="file-table">
+                    <thead>
+                        <tr>
+                            <th>文件名</th>
+                            <th>来源系统</th>
+                            <th>解析状态</th>
+                            <th>作者</th>
+                            <th>更新时间</th>
+                            <th>所属目录</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fileTableBody">
+                        ${filteredFiles.map(file => `
+                            <tr data-id="${file.id}">
+                                <td><strong>${escapeHtml(file.name)}</strong></td>
+                                <td>${file.sourceSystem}</span>
+                                <td><span class="status-badge ${getParsingStatusClass(file.parsingStatus)}">${getParsingStatusText(file.parsingStatus)}</span></span>
+                                <td>${escapeHtml(file.creator) || '-'}</span>
+                                <td>${file.updateTime}</span>
+                                <td>${includeSubdirs && file.belongDirName ? file.belongDirName : '-'}</span>
+                                <td>
+                                    <button class="action-btn view-detail" data-id="${file.id}">详情</button>
+                                    <button class="action-btn delete-btn" data-id="${file.id}" data-name="${escapeHtml(file.name)}">删除</button>
+                                </span>
+                            </tr>
+                        `).join('')}
+                        ${filteredFiles.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">暂无知识文件</td>' : ''}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        mainDiv.innerHTML = html;
+
+        document.getElementById('searchBtn')?.addEventListener('click', () => {
+            currentFilter.keyword = document.getElementById('filterKeyword').value;
+            currentFilter.sourceSystem = document.getElementById('filterSource').value;
+            currentFilter.parsingStatus = document.getElementById('filterStatus').value;
+            renderFileList();
+        });
+        const includeCheckbox = document.getElementById('includeSubdirsCheckbox');
+        if (includeCheckbox) {
+            includeCheckbox.addEventListener('change', () => renderFileList());
+        }
+        const uploadBtn = document.getElementById('uploadBtn');
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', () => {
+                const fileInput = document.getElementById('fileUploadInput');
+                fileInput.value = '';
+                fileInput.click();
+            });
+        }
+        const fileInput = document.getElementById('fileUploadInput');
+        if (fileInput) {
+            fileInput.removeEventListener('change', handleFileSelect);
+            fileInput.addEventListener('change', handleFileSelect);
+        }
+        document.querySelectorAll('.view-detail').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const fileId = btn.getAttribute('data-id');
+                showDetail(fileId);
+            });
+        });
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const fileId = btn.getAttribute('data-id');
+                const fileName = btn.getAttribute('data-name');
+                deleteFile(fileId, fileName);
+            });
+        });
+    }
+
+    function handleFileSelect(e) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            uploadFiles(files);
+        }
+        e.target.value = '';
+    }
+
+    // 详情：左右结构，左侧文档内容，右侧三个Tab（元数据、标签、QA对）
+    function showDetail(fileId) {
+        const file = filesData.find(f => f.id === fileId);
+        if (!file) return;
+        const dir = getDirectoryById(file.directoryId);
+        
+        const leftHtml = `
+            <div class="detail-left">
+                <h4 style="margin-bottom: 12px;">文档内容</h4>
+                <div style="background:#f9fafb; padding: 16px; border-radius: 12px; line-height: 1.6; white-space: pre-wrap;">
+                    ${escapeHtml(file.content || '无正文内容')}
+                </div>
+            </div>
+        `;
+        
+        const rightHtml = `
+            <div class="detail-right">
+                <div class="tab-header">
+                    <button class="tab-button active" data-tab="metadata">元数据</button>
+                    <button class="tab-button" data-tab="tags">标签</button>
+                    <button class="tab-button" data-tab="qa">QA对</button>
+                </div>
+                <div class="tab-content" id="rightTabContent"></div>
+            </div>
+        `;
+        
+        const detailBody = document.getElementById('detailBody');
+        detailBody.innerHTML = leftHtml + rightHtml;
+        
+        const tabContentDiv = document.getElementById('rightTabContent');
+        const renderMetadata = () => {
+            tabContentDiv.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-row"><div class="detail-label">文件名</div><div class="detail-value">${escapeHtml(file.name)}</div></div>
+                    <div class="detail-row"><div class="detail-label">所属目录</div><div class="detail-value">${dir ? escapeHtml(dir.name) : '-'}</div></div>
+                    <div class="detail-row"><div class="detail-label">来源系统</div><div class="detail-value">${file.sourceSystem}</div></div>
+                    <div class="detail-row"><div class="detail-label">解析状态</div><div class="detail-value"><span class="status-badge ${getParsingStatusClass(file.parsingStatus)}">${getParsingStatusText(file.parsingStatus)}</span></div></div>
+                    <div class="detail-row"><div class="detail-label">作者</div><div class="detail-value">${escapeHtml(file.creator) || '-'}</div></div>
+                    <div class="detail-row"><div class="detail-label">更新时间</div><div class="detail-value">${file.updateTime}</div></div>
+                    <div class="detail-row"><div class="detail-label">文件大小</div><div class="detail-value">${file.fileSize || '-'}</div></div>
+                    <div class="detail-row"><div class="detail-label">版本</div><div class="detail-value">${file.version || '-'}</div></div>
+                </div>
+            `;
+        };
+        const renderTags = () => {
+            tabContentDiv.innerHTML = `
+                <div class="detail-section">
+                    <h4 style="margin-bottom: 12px;">标签</h4>
+                    <div>${file.tags.map(t => `<span class="tag" style="background:#e0e7ff; color:#3730a3; display:inline-block; padding:2px 8px; border-radius:20px; margin-right:6px;">${escapeHtml(t)}</span>`).join('') || '无'}</div>
+                </div>
+            `;
+        };
+        const renderQA = () => {
+            const qaHtml = file.qaPairs && file.qaPairs.length ? 
+                file.qaPairs.map(qa => `
+                    <div class="qa-item">
+                        <div class="qa-question">Q: ${escapeHtml(qa.question)}</div>
+                        <div class="qa-answer">A: ${escapeHtml(qa.answer)}</div>
+                    </div>
+                `).join('') : '<div>暂无QA对</div>';
+            tabContentDiv.innerHTML = `
+                <div class="detail-section">
+                    <h4 style="margin-bottom: 12px;">QA对</h4>
+                    ${qaHtml}
+                </div>
+            `;
+        };
+        
+        renderMetadata();
+        
+        const tabs = detailBody.querySelectorAll('.tab-button');
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const tab = btn.getAttribute('data-tab');
+                if (tab === 'metadata') renderMetadata();
+                else if (tab === 'tags') renderTags();
+                else if (tab === 'qa') renderQA();
+            });
+        });
+        
+        document.getElementById('detailModal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toastMsg');
+        toast.textContent = msg;
+        toast.style.backgroundColor = isError ? '#dc2626' : '#1e293b';
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    renderTree();
+    renderFileList();
+
+    document.getElementById('closeDetailModal')?.addEventListener('click', () => closeModal('detailModal'));
+    window.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('detailModal')) closeModal('detailModal');
+    });
+</script>
+</body>
+</html>
