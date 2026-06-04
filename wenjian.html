@@ -504,10 +504,7 @@
         { id: "dir_wealth", name: "财富管理知识库", parentId: "dir_internal" },
         { id: "dir_product", name: "产品营销知识库", parentId: "dir_internal" },
         { id: "dir_external", name: "外部知识库", parentId: "dir_company" },
-        { id: "dir_regulation", name: "监管法规知识库", parentId: "dir_external" },
-        { id: "dir_personal_root", name: "个人知识库", parentId: null },
-        { id: "dir_personal_sub", name: "个人知识库", parentId: "dir_personal_root" },
-        { id: "dir_job", name: "岗位工作知识库", parentId: "dir_personal_sub" }
+        { id: "dir_regulation", name: "监管法规知识库", parentId: "dir_external" }
     ];
 
     // ---------- Mock 文件数据 ----------
@@ -631,11 +628,7 @@
             nodes.forEach(n => sortChildren(n.children));
         };
         sortChildren(roots);
-        roots.sort((a, b) => {
-            if (a.name === "公司级知识库" && b.name === "个人知识库") return -1;
-            if (a.name === "个人知识库" && b.name === "公司级知识库") return 1;
-            return a.name.localeCompare(b.name);
-        });
+        roots.sort((a, b) => a.name.localeCompare(b.name));
         return roots;
     }
 
